@@ -1,0 +1,1 @@
+function s(n){return n&&typeof n=="object"&&!Array.isArray(n)}function c(n,...e){if(!e.length)return n;const f=e.shift();if(s(n)&&s(f))for(const i in f)s(f[i])?(n[i]||Object.assign(n,{[i]:{}}),c(n[i],f[i])):Object.assign(n,{[i]:f[i]});return c(n,...e)}export{c as m};
