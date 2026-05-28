@@ -10,6 +10,69 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Hanken+Grotesk:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
 
+<script>
+(() => {
+  window.__ATELIER_DISABLE_AUDIO__ = true;
+
+  const AUDIO_FILE_PATTERN = /\.(mp3|m4a|aac|ogg|oga|wav|weba)(?:[?#]|$)/i;
+
+  function isAudioMedia(element){
+    if (!element) return false;
+    const tag = (element.tagName || '').toLowerCase();
+    const src = String(element.currentSrc || element.src || '');
+    return tag === 'audio' || AUDIO_FILE_PATTERN.test(src);
+  }
+
+  function silenceAudio(element){
+    if (!isAudioMedia(element)) return;
+    try { element.pause(); } catch (error) {}
+    try { element.muted = true; } catch (error) {}
+    try { element.volume = 0; } catch (error) {}
+    try { element.autoplay = false; } catch (error) {}
+    try { element.removeAttribute('autoplay'); } catch (error) {}
+  }
+
+  const originalPlay = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = function(){
+    if (isAudioMedia(this)){
+      silenceAudio(this);
+      return Promise.resolve();
+    }
+    return originalPlay.apply(this, arguments);
+  };
+
+  const NativeAudio = window.Audio;
+  if (typeof NativeAudio === 'function'){
+    window.Audio = function(...args){
+      const audio = new NativeAudio(...args);
+      silenceAudio(audio);
+      return audio;
+    };
+    window.Audio.prototype = NativeAudio.prototype;
+  }
+
+  function silenceAllAudio(){
+    document.querySelectorAll('audio').forEach(silenceAudio);
+  }
+
+  function installAudioObserver(){
+    silenceAllAudio();
+    new MutationObserver(silenceAllAudio).observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['src', 'autoplay']
+    });
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', installAudioObserver, { once: true });
+  } else {
+    installAudioObserver();
+  }
+})();
+</script>
+
 <style>
   :root{
     /* Plaster palette ported from immersive-g.com — neutral light grey base,
