@@ -1,0 +1,27 @@
+{
+  "name": "stone-to-signal",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "models": "bash scripts/compress-models.sh"
+  },
+  "dependencies": {
+    "gsap": "^3.15.0",
+    "lenis": "^1.3.23",
+    "three": "0.184.0"
+  },
+  "devDependencies": {
+    "@gltf-transform/cli": "^4.4.0",
+    "@types/three": "0.184.1",
+    "lil-gui": "^0.21.0",
+    "playwright-core": "^1.60.0",
+    "stats-gl": "^4.1.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16",
+    "vite-plugin-glsl": "^1.6.0"
+  }
+}

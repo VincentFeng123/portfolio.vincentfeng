@@ -338,6 +338,31 @@
   }
 
   .marquee--base{ color: var(--ink); }
+
+  /* Giant background word ("PROJECTS") that slides L->R as David particlizes
+     and spins into the glasses. z-index 1 keeps it ABOVE the plaster but BEHIND
+     the marquee (z3) and the Three.js stage (#stage z4 = David/particles). */
+  .projects-word{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    z-index: 1;
+    margin: 0;
+    white-space: nowrap;
+    font-family: var(--serif);
+    font-weight: 900;
+    font-variation-settings: "opsz" 96, "wght" 900;
+    font-size: 15vw;
+    line-height: 0.86;
+    letter-spacing: 0.045em;
+    text-shadow: 0 1px 0 rgba(243,236,225,0.04);
+    color: var(--ink);
+    opacity: var(--projects-alpha, 0);
+    transform: translate(-50%, -50%) translateX(var(--projects-slide, 0));
+    will-change: transform, opacity;
+    pointer-events: none;
+    user-select: none;
+  }
   .marquee--clip{
     color: #f4f1ea;
     clip-path: inset(
@@ -410,6 +435,19 @@
     height: 100%;
     display: flex;
     will-change: transform;
+  }
+  /* One-time ripple overlay (WebGL). Sits over the filmstrip; opaque while it plays
+     during compose, then fades to 0 to reveal the filmstrip (same artwork). */
+  .plate-ripple-canvas{
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+    opacity: 0;
+    will-change: opacity;
   }
   .plate-card{
     flex: 0 0 100%;
@@ -769,7 +807,7 @@
     background: #f2f2f2;
     opacity: 0;
     transform: translate3d(0, 22px, 0);
-    box-shadow: 0 32px 80px rgba(3,3,3,0.16);
+    box-shadow: none;
     transition:
       opacity 620ms cubic-bezier(.18,.78,.28,1),
       transform 760ms cubic-bezier(.18,.78,.28,1);
@@ -836,6 +874,113 @@
     line-height: 1;
     letter-spacing: 0.18em;
   }
+  /* ░░░ Artwork "View Process" timeline ░░░ */
+  .artwork-detail__process-toggle{
+    position: fixed; left: 50%; bottom: clamp(22px, 4vh, 52px);
+    transform: translate3d(-50%, 14px, 0); z-index: 6;
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    height: 44px; padding: 0 30px;
+    border: 0; border-radius: 5px;
+    background: #0a0a0a; color: rgba(255,255,255,0.92); font-family: var(--sans);
+    font-size: 11px; line-height: 1; letter-spacing: 0.26em; text-transform: uppercase;
+    cursor: pointer; opacity: 0; pointer-events: none;
+    transition: color 240ms ease, background 320ms ease,
+      opacity 760ms cubic-bezier(.62,.04,.24,1), transform 760ms cubic-bezier(.62,.04,.24,1);
+  }
+  .artwork-detail.is-ready .artwork-detail__process-toggle{
+    opacity: 1; pointer-events: auto; transform: translate3d(-50%, 0, 0);
+  }
+  .artwork-detail__process-toggle:hover,
+  .artwork-detail__process-toggle:focus-visible{ background: #1c1c1c; color: #fff; outline: none; }
+  .artwork-detail.is-process .artwork-detail__process-toggle{ background: #f4f4f4; color: #0a0a0a; }
+  .artwork-detail.is-process .artwork-detail__process-toggle:hover,
+  .artwork-detail.is-process .artwork-detail__process-toggle:focus-visible{ background: #fff; color: #000; }
+
+  .artwork-detail.is-process .artwork-detail__back{ opacity: 0; pointer-events: none; }
+  .artwork-detail__viewport{
+    transition: opacity 760ms cubic-bezier(.62,.04,.24,1), transform 1000ms cubic-bezier(.62,.04,.24,1);
+    will-change: opacity, transform;
+  }
+  .artwork-detail.is-process .artwork-detail__viewport{
+    opacity: 0; pointer-events: none;
+    transform: scale(0.92); transform-origin: center 40%;
+  }
+
+  /* image FLIP clone — glides hero <-> node-0 */
+  .process-flip-clone{
+    position: fixed; z-index: 150; margin: 0; overflow: hidden;
+    background-size: cover; background-position: center; background-repeat: no-repeat;
+    filter: grayscale(1) contrast(1.04) brightness(0.98);
+    box-shadow: none; border-radius: 0; pointer-events: none;
+    transition:
+      left 1100ms cubic-bezier(.6,.02,.16,1), top 1100ms cubic-bezier(.6,.02,.16,1),
+      width 1100ms cubic-bezier(.6,.02,.16,1), height 1100ms cubic-bezier(.6,.02,.16,1),
+      box-shadow 900ms ease;
+  }
+
+  .process-mode{
+    position: absolute; inset: 0; z-index: 2; background: #060606;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity 820ms cubic-bezier(.62,.04,.24,1), visibility 0s linear 820ms;
+  }
+  .artwork-detail.is-process .process-mode{
+    opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s;
+  }
+  .process-mode__scroll{
+    position: absolute; inset: 0; overflow-x: hidden; overflow-y: auto;
+    overscroll-behavior: contain; scrollbar-width: none;
+  }
+  .process-mode__scroll::-webkit-scrollbar{ display: none; }
+  .process-mode__rail{ position: relative; width: 100%; height: var(--rail-h, 580vh); }
+  .process-mode__stage{ position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .process-mode__track{
+    position: absolute; top: 0; left: 0; height: 100%; width: var(--track-w, 210vw);
+    transform: translate3d(calc(var(--p, 0) * (100vw - var(--track-w, 210vw))), 0, 0);
+    will-change: transform;
+  }
+  .process-mode__line{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
+  .process-mode__line-base{ fill: none; stroke: rgba(255,255,255,0.16); stroke-width: 2.2; stroke-linecap: round; }
+  .process-mode__line-fill{
+    fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round;
+    stroke-dasharray: var(--line-len, 0);
+    stroke-dashoffset: calc((1 - var(--p, 0)) * var(--line-len, 0));
+  }
+  .process-mode__node{
+    position: absolute; left: var(--x, 50%); top: var(--y, 50%); width: 0; height: 0;
+    opacity: var(--reveal, 0); transition: opacity 140ms linear;
+  }
+  .process-mode__node-dot{
+    position: absolute; left: 0; top: 0; width: 10px; height: 10px; margin: -5px 0 0 -5px;
+    border-radius: 50%; background: #fff; box-shadow: 0 0 0 4px #060606, 0 0 16px rgba(255,255,255,0.45);
+  }
+  .process-mode__node-body{
+    position: absolute; left: 0; display: flex; align-items: center;
+    gap: clamp(14px, 1.4vw, 26px); width: max-content; max-width: 38vw;
+  }
+  .process-mode__node--above .process-mode__node-body{ bottom: 0; transform: translate(-50%, calc(-1 * clamp(26px, 6vh, 64px))); }
+  .process-mode__node--below .process-mode__node-body{ top: 0; transform: translate(-50%, clamp(26px, 6vh, 64px)); }
+  .process-mode__node-img{
+    flex: 0 0 auto; width: clamp(140px, 16vw, 260px); aspect-ratio: 4 / 5;
+    background-image: var(--img); background-size: cover; background-position: center;
+    filter: grayscale(1) contrast(1.04) brightness(0.96);
+  }
+  .process-mode__node-caption{ flex: 0 1 auto; max-width: 220px; color: rgba(255,255,255,0.82); font-family: var(--sans); }
+  .process-mode__node-index{ display: block; margin-bottom: 8px; color: rgba(255,255,255,0.4); font-size: 11px; letter-spacing: 0.2em; }
+  .process-mode__node-text{ margin: 0; font-size: clamp(13px, 1vw, 15px); line-height: 1.6; }
+
+  @media (prefers-reduced-motion: reduce){
+    .process-mode__rail{ height: auto; }
+    .process-mode__stage{ position: static; height: auto; min-height: 100vh; }
+    .process-mode__track{
+      position: static; width: 100%; transform: none;
+      display: flex; flex-direction: column; gap: 8vh; padding: 12vh clamp(20px,6vw,80px);
+    }
+    .process-mode__line{ display: none; }
+    .process-mode__node{ position: static; width: auto; height: auto; opacity: 1 !important; }
+    .process-mode__node-dot{ display: none; }
+    .process-mode__node-body{ position: static; transform: none; }
+    .artwork-detail__process-toggle, .process-mode{ transition: none !important; }
+  }
   .artwork-detail.is-ready .artwork-detail__back,
   .artwork-detail.is-ready .artwork-detail__eyebrow,
   .artwork-detail.is-ready .artwork-detail__title,
@@ -881,7 +1026,7 @@
   .artwork-transition-clone--image{
     overflow: hidden;
     background: #f2f2f2;
-    box-shadow: 0 32px 80px rgba(3,3,3,0.16);
+    box-shadow: none;
   }
   .artwork-transition-clone--image img{
     position: absolute;
@@ -1179,7 +1324,7 @@
   .scroll-space{
     position: relative;
     z-index: 0;
-    height: 900vh;
+    height: 1378vh; /* == SCROLL_TOTAL_VH in JS. hero 558vh + morph band 300vh (starts ~408vh, right after question fades) + carousel 670vh = compose 130 (regular) + filmstrip 440 (3 dwells + 2 morph slides, the only long part) + exit 100 (regular) */
     pointer-events: none;
   }
 
@@ -1648,29 +1793,30 @@
   </div>
 </div>
 
+<!-- ░░░ Giant sliding background word during the spin-to-glasses morph ░░░ -->
+<div class="projects-word" id="projects-word" aria-hidden="true">PROJECTS</div>
+
 <!-- ░░░ Image plate (BEHIND statue, above name) ░░░ -->
 <div class="statue-backing" id="statue-backing">
   <div class="plate-window" id="plate-window" role="button" tabindex="-1" aria-label="View more for Textured Surface Study" aria-disabled="true">
     <div class="plate-filmstrip" id="plate-filmstrip">
-      <div class="plate-card"><img src="vertical-grey-scale-shot-textured-black-white-surface.jpg" alt=""></div>
       <div class="plate-card"><img src="black-white-acrylic-painting.jpg" alt=""></div>
       <div class="plate-card"><img src="rm167batch2-sasi-51.jpg" alt=""></div>
-      <div class="plate-card"><img src="bright-turquoise-yellow-paint.jpg" alt=""></div>
-      <div class="plate-card"><img src="images/projects/fish.jpg" alt=""></div>
+      <div class="plate-card"><img src="vertical-grey-scale-shot-textured-black-white-surface.jpg" alt=""></div>
     </div>
+    <!-- One-time ripple overlay: hero artwork (Textured) ripples to the first gallery
+         artwork (Acrylic) during compose, then fades to reveal the filmstrip. -->
+    <canvas class="plate-ripple-canvas" id="plate-ripple-canvas"></canvas>
   </div>
   <div class="plate-preview-layer" id="plate-preview-layer">
-    <div class="plate-preview"><img src="vertical-grey-scale-shot-textured-black-white-surface.jpg" alt=""></div>
     <div class="plate-preview"><img src="black-white-acrylic-painting.jpg" alt=""></div>
     <div class="plate-preview"><img src="rm167batch2-sasi-51.jpg" alt=""></div>
-    <div class="plate-preview"><img src="bright-turquoise-yellow-paint.jpg" alt=""></div>
-    <div class="plate-preview"><img src="images/projects/fish.jpg" alt=""></div>
+    <div class="plate-preview"><img src="vertical-grey-scale-shot-textured-black-white-surface.jpg" alt=""></div>
   </div>
   <div class="plate-title" id="plate-title">
     <span class="plate-title__index" id="plate-title-index">01</span>
-    <span class="plate-title__name" id="plate-title-name">Textured Surface
-Study</span>
-    <a class="plate-view-more" id="plate-view-more" href="#artwork/textured-surface-study">View More</a>
+    <span class="plate-title__name" id="plate-title-name">Acrylic Field</span>
+    <a class="plate-view-more" id="plate-view-more" href="#artwork/acrylic-field">View More</a>
   </div>
 </div>
 
@@ -1694,6 +1840,23 @@ Study</h1>
       <div class="artwork-detail__copy" id="artwork-detail-copy"></div>
     </article>
   </div>
+  <button type="button" class="artwork-detail__process-toggle" aria-pressed="false">
+    <span class="artwork-detail__process-toggle-label">View Process</span>
+  </button>
+  <div class="process-mode" aria-hidden="true">
+    <div class="process-mode__scroll" tabindex="-1">
+      <div class="process-mode__rail">
+        <div class="process-mode__stage">
+          <div class="process-mode__track">
+            <svg class="process-mode__line" viewBox="0 0 3200 1000" preserveAspectRatio="none" aria-hidden="true">
+              <path class="process-mode__line-base" d="" />
+              <path class="process-mode__line-fill" d="" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ░░░ In-page project viewer: opens project pages in an overlay iframe (no navigation, no reload flash) ░░░ -->
@@ -1709,22 +1872,24 @@ Study</h1>
 </section>
 
 <!-- ░░░ Scroll question (BEHIND statue, split around it) ░░░ -->
-<section class="question-layer" aria-label="How does artificial intelligence reshape human identity, emotion, creativity, privacy, and childhood?">
+<section class="question-layer" aria-label="How can artificial intelligence transform unstructured visual media into meaningful, accessible, and actionable knowledge?">
   <p class="question-copy question-copy--left">
     <span class="question-word">How</span>
-    <span class="question-word">does</span>
+    <span class="question-word">can</span>
     <span class="question-word">artificial</span>
     <span class="question-word">intelligence</span>
-    <span class="question-word">reshape</span>
+    <span class="question-word">transform</span>
+    <span class="question-word">unstructured</span>
+    <span class="question-word">visual</span>
   </p>
   <p class="question-copy question-copy--right">
-    <span class="question-word">human</span>
-    <span class="question-word">identity,</span>
-    <span class="question-word">emotion,</span>
-    <span class="question-word">creativity,</span>
-    <span class="question-word">privacy,</span>
+    <span class="question-word">media</span>
+    <span class="question-word">into</span>
+    <span class="question-word">meaningful,</span>
+    <span class="question-word">accessible,</span>
     <span class="question-word">and</span>
-    <span class="question-word">childhood?</span>
+    <span class="question-word">actionable</span>
+    <span class="question-word">knowledge?</span>
   </p>
 </section>
 
@@ -2233,10 +2398,11 @@ if (document.readyState === 'loading'){
 	
 	<script type="module">
 	import * as THREE from 'three';
-	import { Brush, Evaluator, INTERSECTION, SUBTRACTION } from 'three-bvh-csg';
-	import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { Brush, Evaluator, INTERSECTION, SUBTRACTION } from 'three-bvh-csg';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const canvas    = document.getElementById('stage');
 const reliefCanvas = document.getElementById('relief-stage');
@@ -2270,6 +2436,15 @@ const artworkDetailTitle = document.getElementById('artwork-detail-title');
 const artworkDetailMedia = document.getElementById('artwork-detail-media');
 const artworkDetailImage = document.getElementById('artwork-detail-image');
 const artworkDetailCopy = document.getElementById('artwork-detail-copy');
+const processModeEl = document.querySelector('.process-mode');
+const processScrollEl = processModeEl?.querySelector('.process-mode__scroll');
+const processRailEl = processModeEl?.querySelector('.process-mode__rail');
+const processStageEl = processModeEl?.querySelector('.process-mode__stage');
+const processTrackEl = processModeEl?.querySelector('.process-mode__track');
+const processLineBase = processModeEl?.querySelector('.process-mode__line-base');
+const processLineFill = processModeEl?.querySelector('.process-mode__line-fill');
+const processToggle = document.querySelector('.artwork-detail__process-toggle');
+const processToggleLabel = processToggle?.querySelector('.artwork-detail__process-toggle-label');
 const artworkCursor = document.getElementById('artwork-cursor');
 const artworkCursorLabel = document.getElementById('artwork-cursor-label');
 const artistInfo = document.getElementById('artist-info');
@@ -2316,22 +2491,11 @@ function setLoaderCount(value){
 }
 let loaderOutlineLength = 100;
 let loaderSketchDashCycle = 100;
+/* Order = display order in the gallery filmstrip. The hero plate shows Textured
+   Surface; during compose a one-time ripple switches it to the FIRST gallery
+   artwork (Acrylic Field), so the gallery starts there and cycles all 3
+   (Acrylic -> Sasi -> Textured), one per model (glasses / iPhone / icon). */
 const artworks = [
-  {
-    slug: 'textured-surface-study',
-    title: 'Textured Surface Study',
-    image: 'vertical-grey-scale-shot-textured-black-white-surface.jpg',
-    alt: 'Monochrome textured surface study',
-    description: [
-      'This placeholder statement will describe how texture becomes a record of pressure, memory, and digital erosion. It will connect the surface to the larger portfolio question around identity and machine-shaped perception.',
-      'The final writing can include material choices, image sources, scale, and the reason the work belongs in the sequence.'
-    ],
-    process: [
-      'Collect surface references, crop them into close studies, and isolate the marks that feel most physical.',
-      'Build contrast through grayscale editing, then test how the image reads behind the sculptural foreground.',
-      'Refine the final composition so the texture feels quiet from a distance and complex up close.'
-    ]
-  },
   {
     slug: 'acrylic-field',
     title: 'Acrylic Field',
@@ -2363,41 +2527,24 @@ const artworks = [
     ]
   },
   {
-    slug: 'chromatic-paint',
-    title: 'Chromatic Paint',
-    image: 'bright-turquoise-yellow-paint.jpg',
-    alt: 'Bright turquoise and yellow paint study',
+    slug: 'textured-surface-study',
+    title: 'Textured Surface Study',
+    image: 'vertical-grey-scale-shot-textured-black-white-surface.jpg',
+    alt: 'Monochrome textured surface study',
     description: [
-      'This placeholder statement will focus on saturation, surface tension, and the way color can feel synthetic and bodily at the same time.',
-      'Later copy can describe the paint handling, lighting conditions, and how the work extends the portfolio theme.'
+      'This placeholder statement will describe how texture becomes a record of pressure, memory, and digital erosion. It will connect the surface to the larger portfolio question around identity and machine-shaped perception.',
+      'The final writing can include material choices, image sources, scale, and the reason the work belongs in the sequence.'
     ],
     process: [
-      'Create high-saturation studies that push color toward an artificial glow.',
-      'Photograph the paint at angles that reveal ridges, pooling, and small material accidents.',
-      'Select a final crop that turns the surface into a landscape rather than a simple texture.'
-    ]
-  },
-  {
-    slug: 'fish-study',
-    title: 'Fish Study',
-    image: 'images/projects/fish.jpg',
-    alt: 'Fish study artwork',
-    description: [
-      'This placeholder statement will describe the fish study as a moment of figuration inside the broader material sequence. It can later explain symbolism, reference choices, and personal meaning.',
-      'The final writing can clarify whether the image is a study, a finished piece, or a process artifact.'
-    ],
-    process: [
-      'Gather anatomical and symbolic references, then reduce the form to the details that matter most.',
-      'Build the image through controlled contrast, edge treatment, and a restrained palette.',
-      'Place the work in sequence so it changes the rhythm of the portfolio without breaking the system.'
+      'Collect surface references, crop them into close studies, and isolate the marks that feel most physical.',
+      'Build contrast through grayscale editing, then test how the image reads behind the sculptural foreground.',
+      'Refine the final composition so the texture feels quiet from a distance and complex up close.'
     ]
   }
 ];
 const plateTitles = artworks.map((artwork) => artwork.title);
 const plateImageLinks = artworks.map((artwork) => artwork.image);
 const plateCursorThemes = [
-  { color: '#ffffff' },
-  { color: '#ffffff' },
   { color: '#ffffff' },
   { color: '#ffffff' },
   { color: '#ffffff' }
@@ -2435,6 +2582,171 @@ const scrollSculpture = {
   crackProgress: 0,
   splitProgress: 0,
   layoutProgress: 0
+};
+
+/* ----- Scroll phase boundaries -- derived from absolute vh lengths so each
+   phase keeps its own scroll length regardless of the total page height. ------
+   - Hero title/question/fracture pacing: 558vh (unchanged).
+   - Morph band: a 300vh window (David spins a full turn, particlizes, and
+     reassembles AS the glasses while the giant PROJECTS word sweeps the bg)
+     STARTING at 408vh -- right after the hero question fades (heroProgress 0.72
+     -> ~0.305 of the page) -- ending at 708vh. Same 300vh DURATION as before,
+     just placed early (overlapping the already-settled hero tail).
+   - Carousel: 607vh (2026-06-15, extended from 492vh). The extra length is
+     spent on LONGER, SMOOTHER image-to-image slides (moveWeight) while each
+     image's absolute DWELL stays the same -- see plateIndexForProgress.
+   IMPORTANT: SCROLL_TOTAL_VH MUST equal the .scroll-space CSS height. */
+const SCROLL_HERO_VH        = 558;   // hero title/question/fracture pacing
+const SCROLL_MORPH_START_VH = 408;   // morph begins right after the question fades
+const SCROLL_MORPH_VH       = 300;   // morph band length (duration) -- unchanged
+// Carousel = THREE explicit vh bands. Only the FILMSTRIP is "long" (per-image dwells +
+// the inter-image morph slides); compose + exit stay regular speed so the page never
+// drags. 3 images only (glasses / iPhone / icon, one per image).
+const SCROLL_CAROUSEL_COMPOSE_VH   = 130;   // glasses slide left + image 1 slide in (regular speed)
+const SCROLL_CAROUSEL_FILMSTRIP_VH = 440;   // 3 dwells (~40vh) + 2 morph slides (~160vh) -- the ONLY lengthened part
+const SCROLL_CAROUSEL_EXIT_VH      = 100;   // plate tucks to the corner + artist info (regular speed)
+const SCROLL_CAROUSEL_VH = SCROLL_CAROUSEL_COMPOSE_VH + SCROLL_CAROUSEL_FILMSTRIP_VH + SCROLL_CAROUSEL_EXIT_VH;  // 670
+const SCROLL_TOTAL_VH = SCROLL_MORPH_START_VH + SCROLL_MORPH_VH + SCROLL_CAROUSEL_VH;   // 1378 == .scroll-space height
+const HERO_SCROLL_END  = SCROLL_HERO_VH / SCROLL_TOTAL_VH;                              // ~0.4243
+const MORPH_BAND_START = SCROLL_MORPH_START_VH / SCROLL_TOTAL_VH;                       // ~0.3103
+const MORPH_BAND_END   = (SCROLL_MORPH_START_VH + SCROLL_MORPH_VH) / SCROLL_TOTAL_VH;   // ~0.5384
+const DROP_BAND_END   = MORPH_BAND_END;        // alias kept for any legacy refs
+const GLASSES_DROP_TRIGGER = HERO_SCROLL_END;  // (legacy; spring-drop replaced by the morph)
+const MORPH_COUNT = 26000;       // particle count for the dissolve cloud
+
+/* ----- Spin-to-glasses morph: state + shared uniforms (declared here, early,
+   so updateScrollScene()'s init-time call can read them without a TDZ; the
+   build/render machinery lives further down near tick()). ----- */
+const MORPH = { ready: false, failed: false, kicked: false, m: 0, yaw: 0, plateFade: 0 };
+const morphU = {
+  uDissolve: { value: 0 },   // head erosion / particle birth front
+  uErode:    { value: 0 },   // solid-David death (lags uDissolve a hair)
+  uMorph:    { value: 0 },   // particle travel head -> glasses
+  uScatter:  { value: 0 },   // bloom amplitude (peaks mid-band)
+  uReveal:   { value: 0 },   // glasses materialize / particles absorbed
+  uTime:     { value: 0 },
+  uSize:     { value: 13.0 },
+  uPixelRatio: { value: Math.min(1.35, window.devicePixelRatio || 1) },
+  uColor:    { value: new THREE.Color(0x17120d) }  // charcoal stone-dust
+};
+// shared head-field uniforms read (by reference) by every patched David material
+const morphHeadField = {
+  uErode: morphU.uErode,
+  uHeadMatrixInv: { value: new THREE.Matrix4() },
+  uFieldScaleHead: { value: 1 },
+  uYMinF: { value: 0 }, uHeightF: { value: 1 },
+  uFieldMin: { value: 0 }, uFieldRange: { value: 1 }
+};
+let morphPoints = null;     // THREE.Points cloud (child of statueGroup)
+let morphGlasses = null;    // solid glasses mesh (child of statueGroup)
+
+/* ----- Stage 2 (glasses -> iPhone) morph: state + uniforms. Mirror of the hero
+   MORPH/morphU, fully independent so the hero morph is untouched & both stay
+   scroll-reversible. Declared EARLY (TDZ) like the hero morph. ----- */
+const MORPH2 = { ready: false, failed: false, kicked: false, m: 0, yaw: 0 };
+const morphU2 = {
+  uDissolve: { value: 0 }, uErode: { value: 0 }, uMorph: { value: 0 },
+  uScatter: { value: 0 }, uReveal: { value: 0 }, uTime: { value: 0 },
+  uSize: { value: 13.0 },
+  uPixelRatio: { value: Math.min(1.35, window.devicePixelRatio || 1) },
+  uColor: { value: new THREE.Color(0x17120d) }   // same charcoal as the hero morph
+};
+let morph2Pivot = null;    // group centered AT the phone; spins in place (MORPH2.yaw)
+let morph2Points = null;   // THREE.Points cloud (child of morph2Pivot)
+let morph2Iphone = null;   // solid iPhone reveal mesh (child of morph2Pivot)
+let morph2IphoneGeo = null;   // normalized iphone geometry, stashed by kickoff
+let morph2IphoneMaxDist = 0;
+// iPhone placement in the glasses' local slot (tuned via __MORPH2 render-verify).
+// scaleMul shrinks the phone (its height was sized to the glasses' width); offX
+// shifts it right so the portrait phone reads fully on-screen (glasses are wide &
+// bleed off-left, a narrow phone at the same spot would be a sliver).
+const PHONE_LOOK = { scaleMul: 1.1, offX: 0.0, offY: 0.0, offZ: 0.0, yawDeg: 0 };
+
+/* ----- Stage 3 (iPhone -> black image-icon) morph: state + uniforms. Mirror of
+   the Stage-2 MORPH2/morphU2, fully independent so Stages 1+2 are untouched & all
+   stages stay scroll-reversible. Declared EARLY (TDZ) like the other morphs. The
+   target is a PROCEDURAL 3D model built from the "image" SVG (frame + dot + arc),
+   coloured near-black. ----- */
+const MORPH3 = { ready: false, failed: false, kicked: false, m: 0, yaw: 0 };
+const morphU3 = {
+  uDissolve: { value: 0 }, uErode: { value: 0 }, uMorph: { value: 0 },
+  uScatter: { value: 0 }, uReveal: { value: 0 }, uTime: { value: 0 },
+  uSize: { value: 13.0 },
+  uPixelRatio: { value: Math.min(1.35, window.devicePixelRatio || 1) },
+  uColor: { value: new THREE.Color(0x17120d) }   // same charcoal cloud as the other morphs
+};
+let morph3Pivot = null;     // group centered AT the icon; spins in place (MORPH3.yaw)
+let morph3Points = null;    // THREE.Points cloud (child of morph3Pivot)
+let morph3Icon = null;      // solid black icon reveal mesh (child of morph3Pivot)
+let morph3IconGeo = null;   // procedural icon geometry (built synchronously by kickoff)
+let morph3IconMaxDist = 0;
+// Icon placement in the iPhone's slot (the same left-accent spot). offX:0 => the
+// cloud dissolves/spins/reassembles in ONE place. Tuned via __MORPH3 render-verify.
+const ICON_LOOK = { scaleMul: 1.0, offX: 0.0, offY: 0.0, offZ: 0.0, yawDeg: 0 };
+
+/* Plate ripple overlay state — declared EARLY (read by updateScrollScene, which runs
+   synchronously during setup, so a late const would TDZ-crash). The renderer/textures
+   are set up later by initPlateRipple(). */
+const plateRippleState = { progress: 0, show: 0 };
+const plateRippleSize = { w: 0, h: 0 };
+window.__plateRipple = plateRippleState;
+
+/* ----- Statue slide-left amounts (applied via scrollSculpture.layoutProgress).
+   Reduced from the old glasses-station offset (-2.72) so David's face stays
+   on-screen for the glasses-drop moment. Live-tunable via window.__GLASSES. */
+const STATUE_LAYOUT = {
+  // Post-morph these drive the GLASSES (David is gone) as they settle into the
+  // carousel's far-left accent slot: shifted well left and turned ~90deg further
+  // right than before so the glasses read in near-profile, "facing" the gallery.
+  shiftDesktop: -2.20, shiftMobile: -1.50,
+  dropDesktop:  -0.18, dropMobile:  -0.12,
+  scaleDesktop:  0.06, scaleMobile:  0.06,
+  // Extra yaw applied as the glasses park (rides layoutProgress). The glasses'
+  // base pose cancels the inherited hero yaw, so this value ~= their final world
+  // yaw: POSITIVE = turn right toward the gallery. +20 = a gentle 3/4 turn.
+  turnBackDeg: 20, turnBackDegMobile: 20
+};
+
+/* ----- Glasses drop (plastic_sunglasses.glb settles onto David's nose) ------
+   The model tracks David's live head transform and falls into place with a
+   tiny under-damped spring (one small overshoot). All values tuned via render.
+   noseX/Y/Z = bridge offset in the HEAD-LOCAL frame (world units at scale 1). */
+const GLASSES_LOOK = {
+  widthDesktop: 1.4,   // glasses world-width at statueGroup scale 1 (≈ David's face width)
+  widthMobile:  1.4,   // same model/face world size on mobile (camera pulls back, not the statue)
+  noseX:  0.20,        // head-local bridge offset (frame-relative; back to the verified-good on-face placement)
+  noseY:  0.46,        // tuned: lenses over the eyes, bridge on the nose
+  noseZ:  0.20,        // smaller = tucked in toward the face (less floating)
+  screenX: -0.10,      // PURE world-horizontal shift (screen-left = negative); no rotation/perspective change
+  yawFine:  -0.50,     // radians; matches the glasses to the turned face. NOTE the sign: the face points slightly screen-left so the LEFT lens must recede (negative). Positive swings the right lens outward = wrong way. ~-0.7 over-rotates.
+  pitchFine: 0.0,
+  dropLift:  7.0,      // start height above the seated position (high enough to be off-screen)
+  springK:  130,       // spring stiffness
+  springC:   16        // damping (ζ ≈ 0.70 → one tiny overshoot ≈0.19u/~31px @60fps, settle ~0.75s)
+};
+const glassesState = {
+  ready: false,                    // model loaded + added to scene
+  on: false,                       // scroll trigger: true once the slide is complete
+  drop: GLASSES_LOOK.dropLift,     // current vertical offset above the nose (0 = seated)
+  vel: 0,                          // spring velocity
+  modelWidth: 1                    // measured glasses bbox width, set at load (for fit-to-width)
+};
+let glassesGroup = null;
+const _glNose = new THREE.Vector3();
+const _glUp = new THREE.Vector3();
+const _glFine = new THREE.Quaternion();
+const _glEuler = new THREE.Euler();
+// Live-tuning hook: window.__GLASSES.look lets a driver mutate the fit/offset
+// values at runtime (tick() reads them every frame); seat()/lift() force the
+// drop state for quick alignment shots.
+window.__GLASSES = {
+  look: GLASSES_LOOK,
+  layout: STATUE_LAYOUT,
+  state: glassesState,
+  get group(){ return glassesGroup; },
+  seat(){ glassesState.on = true; glassesState.drop = 0; glassesState.vel = 0; },
+  lift(){ glassesState.on = false; glassesState.drop = GLASSES_LOOK.dropLift; glassesState.vel = 0; },
+  replay(){ glassesState.on = true; glassesState.drop = GLASSES_LOOK.dropLift; glassesState.vel = 0; }
 };
 let lastImmersiveScrollY = 0;
 let lastImmersiveScrollTime = performance.now();
@@ -3410,27 +3722,67 @@ function invalidateLoaderDynamicOutline(){
   }
 }
 
+/* Carousel filmstrip weighting (shared by plateIndexForProgress + morph2BandProgress).
+   Per-image DWELL is kept the same in ABSOLUTE scroll (SCROLL_CAROUSEL_VH is grown to
+   match), the normal SLIDE stays ~3x of the original; but the FIRST move (image1->2)
+   is much longer so the glasses->iPhone morph reads (~150vh window). */
+const CAROUSEL_DWELL_WEIGHT = 6.0;
+const CAROUSEL_MOVE_WEIGHT  = 3.0;
+const CAROUSEL_FIRST_MOVE_WEIGHT = 24.0;   // image1->2 morph window (~150vh): glasses->iPhone
+const CAROUSEL_SECOND_MOVE_WEIGHT = 24.0;  // image2->3 morph window (~150vh): iPhone->icon
+const CAROUSEL_EXIT_WEIGHT = 0.32;
+function carouselMoveWeight(index){
+  if (index === 0) return CAROUSEL_FIRST_MOVE_WEIGHT;
+  if (index === 1) return CAROUSEL_SECOND_MOVE_WEIGHT;
+  return CAROUSEL_MOVE_WEIGHT;
+}
+function carouselTotalWeight(count){
+  let w = count * CAROUSEL_DWELL_WEIGHT + CAROUSEL_EXIT_WEIGHT;
+  for (let i = 0; i < count - 1; i++) w += carouselMoveWeight(i);
+  return w;
+}
+/* {start, span} of move(moveIndex)'s window as FRACTIONS of galleryProgress; cumulative
+   weight = (dwell+move) for each prior image, then this image's dwell. Single source of
+   truth for both morph band-progress fns so they stay in lockstep with the filmstrip. */
+function carouselMoveWindow(moveIndex){
+  const count = Math.max(1, platePreviewCards.length);
+  const totalWeight = carouselTotalWeight(count);
+  let cursor = 0;
+  for (let i = 0; i < moveIndex; i++){ cursor += CAROUSEL_DWELL_WEIGHT; cursor += carouselMoveWeight(i); }
+  cursor += CAROUSEL_DWELL_WEIGHT;                 // dwell of image[moveIndex]
+  return { start: cursor / totalWeight, span: carouselMoveWeight(moveIndex) / totalWeight };
+}
+/* linear 0..1 position within the (lengthened) image1->2 move window; 0 before, 1 after */
+function morph2BandProgress(galleryProgress){
+  if (platePreviewCards.length < 2) return 0;
+  const w = carouselMoveWindow(0);
+  return clamp01((galleryProgress - w.start) / w.span);
+}
+/* linear 0..1 position within the (lengthened) image2->3 move window; 0 before, 1 after */
+function morph3BandProgress(galleryProgress){
+  if (platePreviewCards.length < 3) return 0;
+  const w = carouselMoveWindow(1);
+  return clamp01((galleryProgress - w.start) / w.span);
+}
+
 function plateIndexForProgress(progress){
   const count = Math.max(1, platePreviewCards.length);
-  const dwellWeight = 1.18;
-  const moveWeight = 1;
-  const exitWeight = 0.32;
-  const totalWeight = count * dwellWeight + Math.max(0, count - 1) * moveWeight + exitWeight;
+  const totalWeight = carouselTotalWeight(count);
   let cursor = 0;
 
   for (let index = 0; index < count; index++){
-    const dwellSpan = dwellWeight / totalWeight;
+    const dwellSpan = CAROUSEL_DWELL_WEIGHT / totalWeight;
     if (progress < cursor + dwellSpan) return index;
     cursor += dwellSpan;
 
     if (index < count - 1){
-      const moveSpan = moveWeight / totalWeight;
+      const moveSpan = carouselMoveWeight(index) / totalWeight;
       if (progress < cursor + moveSpan){
         return index + cosineEase((progress - cursor) / moveSpan);
       }
       cursor += moveSpan;
     } else {
-      const exitSpan = exitWeight / totalWeight;
+      const exitSpan = CAROUSEL_EXIT_WEIGHT / totalWeight;
       return index + cosineEase((progress - cursor) / exitSpan) * 0.18;
     }
   }
@@ -3588,7 +3940,259 @@ function setArtworkDetailContent(index){
       </section>
     `;
   }
+  if (typeof PROCESS !== 'undefined' && PROCESS.active) exitProcessMode({ immediate: true });
+  setProcessModeContent(safeIndex);
 }
+
+/* ░░░ Artwork "View Process" timeline (self-contained; DOM/SVG only) ░░░ */
+const PROCESS = { active: false, built: false, busy: false, p: 0, count: 6, lineLen: 0, endTimer: 0 };
+const PROCESS_IMAGES = [
+  'black-white-acrylic-painting.jpg',
+  'bright-turquoise-yellow-paint.jpg',
+  'rm167batch2-sasi-51.jpg',
+  'vertical-grey-scale-shot-textured-black-white-surface.jpg'
+];
+const PROCESS_CAPTIONS = [
+  'Collect raw references and let the first gestures land without correction.',
+  'Test digital and physical variations until a rhythm starts to emerge.',
+  'Isolate the marks that carry the most physical presence.',
+  'Build contrast and weight so the surface reads from across the room.',
+  'Edit ruthlessly — remove anything that competes with the focus.',
+  'Resolve the final composition and place it in the portfolio sequence.'
+];
+const PROCESS_WAVE = { vbw: 3200, vbh: 1000 };
+const PROCESS_NODE_X = [0.10, 0.24, 0.38, 0.52, 0.66, 0.80];
+
+/* multi-octave (non-harmonic) sum so the centerline meanders organically, not as a tidy sine */
+function processWaveY(xf){
+  return 0.5
+    + 0.080 * Math.sin(xf * 1.15 * Math.PI * 2 + 0.70)
+    + 0.042 * Math.sin(xf * 2.60 * Math.PI * 2 + 2.30)
+    + 0.024 * Math.sin(xf * 4.90 * Math.PI * 2 + 4.10)
+    + 0.013 * Math.sin(xf * 8.70 * Math.PI * 2 + 1.10);
+}
+function processBuildPathD(){
+  const { vbw, vbh } = PROCESS_WAVE;
+  const steps = 240;
+  let d = '';
+  for (let i = 0; i <= steps; i++){
+    const xf = i / steps;
+    d += (i === 0 ? 'M' : 'L') + (xf * vbw).toFixed(2) + ' ' + (processWaveY(xf) * vbh).toFixed(2) + ' ';
+  }
+  return d.trim();
+}
+function setProcessModeContent(index){
+  if (!processModeEl || !processTrackEl) return;
+  const safeIndex = safeArtworkIndex(index);
+  const d = processBuildPathD();
+  if (processLineBase) processLineBase.setAttribute('d', d);
+  if (processLineFill){
+    processLineFill.setAttribute('d', d);
+    const len = processLineFill.getTotalLength ? processLineFill.getTotalLength() : 0;
+    PROCESS.lineLen = len;
+    processStageEl?.style.setProperty('--line-len', len.toFixed(2));
+  }
+  processTrackEl.querySelectorAll('.process-mode__node').forEach((n) => n.remove());
+  const frag = document.createDocumentFragment();
+  for (let i = 0; i < PROCESS.count; i++){
+    const xf = PROCESS_NODE_X[i] != null ? PROCESS_NODE_X[i] : ((i + 0.5) / PROCESS.count);
+    const yf = processWaveY(xf);
+    const above = i % 2 === 0;
+    // node 0 IS the artwork's own image so the hero can glide seamlessly into it
+    const img = (i === 0)
+      ? (artworks[safeIndex] && artworks[safeIndex].image) || PROCESS_IMAGES[safeIndex % PROCESS_IMAGES.length]
+      : PROCESS_IMAGES[(safeIndex + i) % PROCESS_IMAGES.length];
+    const cap = PROCESS_CAPTIONS[i % PROCESS_CAPTIONS.length];
+    const node = document.createElement('figure');
+    node.className = 'process-mode__node ' + (above ? 'process-mode__node--above' : 'process-mode__node--below');
+    node.style.setProperty('--x', (xf * 100).toFixed(3) + '%');
+    node.style.setProperty('--y', (yf * 100).toFixed(3) + '%');
+    node.dataset.xf = String(xf);
+    node.innerHTML =
+      '<span class="process-mode__node-dot"></span>' +
+      '<div class="process-mode__node-body">' +
+        '<div class="process-mode__node-img" style="--img:url(\'' + img + '\')"></div>' +
+        '<figcaption class="process-mode__node-caption">' +
+          '<span class="process-mode__node-index">' + String(i + 1).padStart(2, '0') + '</span>' +
+          '<p class="process-mode__node-text">' + escapeHTML(cap) + '</p>' +
+        '</figcaption>' +
+      '</div>';
+    frag.appendChild(node);
+  }
+  processTrackEl.appendChild(frag);
+  PROCESS.built = true;
+  processApplyProgress(0);
+}
+function processApplyProgress(p){
+  PROCESS.p = clamp01(p);
+  processStageEl?.style.setProperty('--p', PROCESS.p.toFixed(4));
+  if (!processTrackEl) return;
+  const vw = window.innerWidth || 1;
+  const trackW = processTrackEl.getBoundingClientRect().width || vw;
+  const shift = PROCESS.p * (vw - trackW);
+  for (const node of processTrackEl.querySelectorAll('.process-mode__node')){
+    const xf = parseFloat(node.dataset.xf || '0');
+    const t = (xf * trackW + shift) / vw;
+    const reveal = smoothstep(-0.10, 0.14, t) * (1 - smoothstep(0.86, 1.10, t));
+    node.style.setProperty('--reveal', reveal.toFixed(3));
+  }
+}
+const PROCESS_FLIP_MS = 1100;
+let processLenis = null, processLenisRaf = 0, processScrollFrame = 0;
+
+function processProgressNow(){
+  if (!processScrollEl) return 0;
+  const max = processScrollEl.scrollHeight - processScrollEl.clientHeight;
+  const sc = processLenis ? processLenis.scroll : processScrollEl.scrollTop;
+  return max > 0 ? clamp01(sc / max) : 0;
+}
+const PROCESS_END_DELAY_MS = 480;
+function maybeAutoExitProcess(p){
+  if (!PROCESS.active) return;
+  if (p >= 0.999){
+    if (!PROCESS.endTimer){
+      PROCESS.endTimer = setTimeout(() => {
+        PROCESS.endTimer = 0;
+        if (PROCESS.active && processProgressNow() >= 0.99) exitProcessMode();
+      }, PROCESS_END_DELAY_MS);
+    }
+  } else if (p < 0.985 && PROCESS.endTimer){
+    clearTimeout(PROCESS.endTimer); PROCESS.endTimer = 0;
+  }
+}
+function processScrollProgress(){
+  const p = processProgressNow();
+  processApplyProgress(p);
+  maybeAutoExitProcess(p);
+}
+function onProcessScroll(){ processScrollFrame = 0; processScrollProgress(); }
+function requestProcessScroll(){ if (processScrollFrame) return; processScrollFrame = requestAnimationFrame(onProcessScroll); }
+function onProcessResize(){
+  if (!PROCESS.active) return;
+  if (processLineFill && processLineFill.getTotalLength){
+    PROCESS.lineLen = processLineFill.getTotalLength();
+    processStageEl?.style.setProperty('--line-len', PROCESS.lineLen.toFixed(2));
+  }
+  if (processLenis) processLenis.resize();
+  requestProcessScroll();
+}
+/* a dedicated Lenis instance smooth-scrolls INSIDE the process layer (the global
+   Lenis is stopped while the detail overlay is open). */
+function startProcessLenis(){
+  if (processLenis || reduceScrollMotion || !window.Lenis || !processScrollEl || !processRailEl) return;
+  try {
+    processLenis = new window.Lenis({
+      wrapper: processScrollEl, content: processRailEl,
+      lerp: 0.07, wheelMultiplier: 0.78, touchMultiplier: 0.5,
+      smoothWheel: true, syncTouch: true, syncTouchLerp: 0.08,
+      orientation: 'vertical', gestureOrientation: 'vertical'
+    });
+    processLenis.on('scroll', processScrollProgress);
+    const raf = (t) => { if (!processLenis) return; processLenis.raf(t); processLenisRaf = requestAnimationFrame(raf); };
+    processLenisRaf = requestAnimationFrame(raf);
+  } catch (e){ console.warn('process lenis failed', e); processLenis = null; }
+}
+function stopProcessLenis(){
+  if (processLenisRaf){ cancelAnimationFrame(processLenisRaf); processLenisRaf = 0; }
+  if (processLenis){ try { processLenis.destroy(); } catch (e){} processLenis = null; }
+}
+function processNode0Img(){ return processTrackEl ? processTrackEl.querySelector('.process-mode__node-img') : null; }
+function makeProcessFlipClone(rect, imgUrl){
+  const c = document.createElement('div');
+  c.className = 'process-flip-clone';
+  c.style.left = rect.left + 'px'; c.style.top = rect.top + 'px';
+  c.style.width = rect.width + 'px'; c.style.height = rect.height + 'px';
+  if (imgUrl) c.style.backgroundImage = "url('" + imgUrl + "')";
+  document.body.appendChild(c);
+  return c;
+}
+function glideProcessFlip(clone, toRect){
+  requestAnimationFrame(() => {
+    clone.style.left = toRect.left + 'px'; clone.style.top = toRect.top + 'px';
+    clone.style.width = toRect.width + 'px'; clone.style.height = toRect.height + 'px';
+  });
+}
+function enterProcessMode(){
+  if (!artworkDetail || !processModeEl || PROCESS.active || PROCESS.busy) return;
+  if (artworkDetailState.transitioning) return;
+  PROCESS.busy = true;
+  if (!PROCESS.built) setProcessModeContent(artworkDetailState.index);
+  if (processScrollEl) processScrollEl.scrollTop = 0;
+  processApplyProgress(0);
+  // FLIP: measure hero + node-0 BEFORE the black layer takes over (visibility:hidden still has layout)
+  const heroImg = artworkDetailImage;
+  const heroRect = heroImg ? heroImg.getBoundingClientRect() : null;
+  const heroUrl = heroImg ? (heroImg.currentSrc || heroImg.src) : null;
+  const node0 = processNode0Img();
+  const node0Rect = node0 ? node0.getBoundingClientRect() : null;
+  PROCESS.heroRect = heroRect; PROCESS.heroUrl = heroUrl;
+  let clone = null;
+  if (heroRect && node0Rect && heroUrl){
+    clone = makeProcessFlipClone(heroRect, heroUrl);
+    node0.style.opacity = '0';
+    glideProcessFlip(clone, node0Rect);
+  }
+  artworkDetail.classList.add('is-process');
+  processModeEl.setAttribute('aria-hidden', 'false');
+  processToggle?.setAttribute('aria-pressed', 'true');
+  if (processToggleLabel) processToggleLabel.textContent = 'Exit';
+  PROCESS.active = true;
+  startProcessLenis();
+  if (processLenis) processLenis.scrollTo(0, { immediate: true });
+  const finish = () => {
+    if (node0) node0.style.opacity = '';
+    if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
+    PROCESS.busy = false;
+    processScrollEl?.focus?.({ preventScroll: true });
+  };
+  if (clone) setTimeout(finish, PROCESS_FLIP_MS + 80);
+  else { PROCESS.busy = false; requestAnimationFrame(() => processScrollEl?.focus?.({ preventScroll: true })); }
+}
+function exitProcessMode(options = {}){
+  if (!artworkDetail || !processModeEl) return;
+  if (PROCESS.endTimer){ clearTimeout(PROCESS.endTimer); PROCESS.endTimer = 0; }
+  const immediate = !!options.immediate;
+  stopProcessLenis();
+  const node0 = processNode0Img();
+  if (node0) node0.style.opacity = '';
+  artworkDetail.classList.remove('is-process');   // black fades out, detail fades back in
+  processModeEl.setAttribute('aria-hidden', 'true');
+  processToggle?.setAttribute('aria-pressed', 'false');
+  if (processToggleLabel) processToggleLabel.textContent = 'View Process';
+  PROCESS.active = false;
+  PROCESS.busy = false;
+  // Keep the timeline FROZEN at its current state during the fade, then silently
+  // reset scroll/progress to 0 once the black layer is hidden — otherwise the track
+  // snaps back to the start mid-fade and the exit looks janky.
+  const resetScroll = () => {
+    if (PROCESS.active) return;            // re-entered in the meantime — leave it
+    if (processScrollEl) processScrollEl.scrollTop = 0;
+    processApplyProgress(0);
+  };
+  if (immediate) resetScroll();
+  else {
+    setTimeout(resetScroll, 880);          // ~= the .process-mode opacity fade (820ms)
+    requestAnimationFrame(() => artworkDetailBack?.focus?.({ preventScroll: true }));
+  }
+}
+function toggleProcessMode(){ if (PROCESS.active) exitProcessMode(); else enterProcessMode(); }
+window.openArtworkDetail = openArtworkDetail;
+window.__PROCESS = {
+  state: PROCESS,
+  enter: enterProcessMode,
+  exit: exitProcessMode,
+  build(i){ setProcessModeContent(typeof i === 'number' ? i : artworkDetailState.index); },
+  park(p){ if (!PROCESS.active) enterProcessMode(); processApplyProgress(typeof p === 'number' ? p : PROCESS.p); },
+  get lenis(){ return processLenis; },
+  scrollFrac(f){
+    const max = processScrollEl ? processScrollEl.scrollHeight - processScrollEl.clientHeight : 0;
+    const px = clamp01(f) * max;
+    if (processLenis) processLenis.scrollTo(px, { immediate: true });
+    else if (processScrollEl) processScrollEl.scrollTop = px;
+    processApplyProgress(processProgressNow());
+  },
+  get nodes(){ return processTrackEl ? Array.from(processTrackEl.querySelectorAll('.process-mode__node')) : []; }
+};
 
 function validRect(rect){
   return rect && rect.width > 1 && rect.height > 1;
@@ -4120,6 +4724,7 @@ async function closeArtworkDetail(options = {}){
   const artwork = artworks[safeIndex];
   if (!artwork) return;
 
+  if (typeof PROCESS !== 'undefined') exitProcessMode({ immediate: true });
   artworkDetailState.transitioning = true;
   setArtworkCursorVisible(false);
   document.body.classList.remove('has-artwork-cursor', 'has-artwork-cursor-ready');
@@ -4264,10 +4869,14 @@ plateWindow?.addEventListener('keydown', (event) => {
 });
 
 artworkDetailBack?.addEventListener('click', requestCloseArtworkDetail);
+processToggle?.addEventListener('click', toggleProcessMode);
+processScrollEl?.addEventListener('scroll', requestProcessScroll, { passive: true });
+window.addEventListener('resize', onProcessResize);
 
 window.addEventListener('keydown', (event) => {
   if (event.key !== 'Escape' || !artworkDetailState.open) return;
   event.preventDefault();
+  if (typeof PROCESS !== 'undefined' && PROCESS.active){ exitProcessMode(); return; }
   requestCloseArtworkDetail();
 });
 
@@ -4365,7 +4974,10 @@ function updatePlateFilmstrip(progress, introProgress = 1, exitProgress = 0){
   const titleShift = (1 - titleAlpha) * -10 + introProgress * (window.innerWidth < 720 ? 10 : 24);
 
   statueBacking.style.setProperty('--plate-preview-w', `${previewWidth.toFixed(2)}px`);
-  plateFilmstrip.style.transform = `translate3d(${(-u * frameWidth).toFixed(2)}px, 0, 0)`;
+  // Translate by the filmstrip's OWN width (% = exactly one card per step) rather
+  // than a separately-measured pixel frameWidth, which drifted ~1% and left a
+  // sliver of the previous image at the edge.
+  plateFilmstrip.style.transform = `translate3d(${(-u * 100).toFixed(3)}%, 0, 0)`;
   platePreviewLayer.style.opacity = previewAlpha.toFixed(3);
   if (plateTitle && plateTitleIndex && plateTitleName){
     if (currentIndex !== activePlateTitleIndex){
@@ -4464,6 +5076,11 @@ function updateScrollScene(){
     document.documentElement.style.setProperty('--question-alpha', '0');
     document.documentElement.style.setProperty('--question-y', '0px');
     document.documentElement.style.setProperty('--scroll-progress', '1');
+    morphEvalTimeline(1);   // morph already complete: David gone, glasses present
+    if (MORPH2.ready) morph2EvalTimeline(1);   // iPhone already assembled in reduced-motion
+    if (MORPH3.ready) morph3EvalTimeline(1);   // icon already assembled in reduced-motion
+    plateRippleState.show = 0;                  // skip the one-time ripple overlay
+    document.documentElement.style.setProperty('--projects-alpha', '0');
     document.documentElement.style.setProperty('--plate-x', window.innerWidth < 720 ? '-64px' : '-250px');
     document.documentElement.style.setProperty('--plate-y', window.innerWidth < 720 ? '-46px' : '-92px');
     document.documentElement.style.setProperty('--plate-motion-scale', window.innerWidth < 720 ? '0.942' : '0.906');
@@ -4477,6 +5094,9 @@ function updateScrollScene(){
     scrollSculpture.crackProgress = 0;
     scrollSculpture.splitProgress = 0;
     scrollSculpture.layoutProgress = 1;
+    glassesState.on = true;          // glasses already seated in reduced-motion
+    glassesState.drop = 0;
+    glassesState.vel = 0;
     updatePlateFilmstrip(1, 1, 1);
     updateArtistInfo(1);
     forwardScrollToImmersive(0, 1, 0);
@@ -4492,29 +5112,66 @@ function updateScrollScene(){
   const scrollY = lenis ? lenis.scroll : window.scrollY;
   const progress = clamp01(scrollY / maxScroll);
   forwardScrollToImmersive(scrollY, maxScroll, progress);
+  // RAW progress: the fixed scroll rail (CSS) and drive-real.mjs's probe both
+  // need this to stay monotone in actual scroll.
   document.documentElement.style.setProperty('--scroll-progress', progress.toFixed(4));
 
-  const heroScrollEnd = 0.62;
+  const heroScrollEnd = HERO_SCROLL_END;
   const heroProgress = clamp01(progress / heroScrollEnd);
-  const carouselProgress = clamp01((progress - heroScrollEnd) / (1 - heroScrollEnd));
-  const galleryProgress = clamp01(carouselProgress / 0.82);
-  const galleryExitProgress = smoothstep(0.82, 1, carouselProgress);
+  // Spin-to-glasses morph band: David particlizes + spins one full turn and
+  // reassembles AS the glasses. Scroll-scrubbed (reversible).
+  const morphProgress = clamp01((progress - MORPH_BAND_START) / (MORPH_BAND_END - MORPH_BAND_START));
+  morphEvalTimeline(morphProgress);
+  // Carousel starts only AFTER the morph band, and is itself two-phase: the
+  // glasses first slide to their far-left accent slot (phase 1), THEN the
+  // projects gallery slides in + the filmstrip advances (phase 2, gated).
+  const carouselProgress = clamp01((progress - MORPH_BAND_END) / (1 - MORPH_BAND_END));
+  // The carousel is THREE vh-based bands so the extra length lives ONLY in the
+  // filmstrip (per-image dwells + the inter-image morph slides). Compose + exit are
+  // fixed regular-speed fractions, derived straight from the vh constants.
+  const composeFrac   = SCROLL_CAROUSEL_COMPOSE_VH / SCROLL_CAROUSEL_VH;
+  const filmstripFrac = SCROLL_CAROUSEL_FILMSTRIP_VH / SCROLL_CAROUSEL_VH;
+  // Band 1 (compose): the glasses slide LEFT and the image slides RIGHT together.
+  const composeProgress = smoothstep(0.0, composeFrac, carouselProgress);
+  // Band 2 (filmstrip): galleryProgress 0..1 maps the whole strip (dwells + slides).
+  const galleryProgress = clamp01((carouselProgress - composeFrac) / filmstripFrac);
+  // Stage-2 morph: glasses -> iPhone over the image1->2 slide.
+  if (MORPH2.ready) morph2EvalTimeline(morph2BandProgress(galleryProgress));
+  // Stage-3 morph: iPhone -> black image-icon over the image2->3 slide.
+  if (MORPH3.ready) morph3EvalTimeline(morph3BandProgress(galleryProgress));
+  // Band 3 (exit): the plate tucks to the corner + artist info appears (regular speed).
+  const exitFrac = Math.max(1e-4, 1 - composeFrac - filmstripFrac);
+  const galleryExitProgress = smoothstep(0.0, 1.0, clamp01((carouselProgress - composeFrac - filmstripFrac) / exitFrac));
+  // One-time ripple: the hero artwork ripples to the gallery's first artwork as the
+  // plate docks right during compose, then fades out to reveal the DOM filmstrip.
+  plateRippleState.progress = composeProgress;
+  plateRippleState.show = 1 - smoothstep(0.0, 0.04, galleryProgress);
+
+  // Giant "PROJECTS" word sweeps L->R behind David through the morph.
+  document.documentElement.style.setProperty('--projects-slide', `${((morphProgress * 2 - 1) * 116).toFixed(2)}vw`);
+  document.documentElement.style.setProperty('--projects-alpha',
+    (smoothstep(0.05, 0.18, morphProgress) * (1 - smoothstep(0.84, 0.97, morphProgress))).toFixed(3));
 
   const sculptureTurnOut = smoothstep(0.05, 0.38, heroProgress);
   const fractureSplitOut = smoothstep(0.20, 0.60, heroProgress);
   const fractureReturn = smoothstep(0.60, 0.72, heroProgress);
   const fractureProgress = fractureSplitOut * (1 - fractureReturn);
   const questionExit = fractureReturn;
-  const compositionProgress = smoothstep(0.76, 0.96, heroProgress);
-  const statueShiftProgress = compositionProgress;
-  const plateShiftProgress = compositionProgress;
-  const borderProgress = compositionProgress * (1 - galleryExitProgress);
+  // Composition handoff is DEFERRED to the carousel: David stays CENTERED through
+  // the spin/morph, then the resulting glasses slide left as the gallery enters.
+  // The artwork strip is VISIBLE FROM THE START (centred home position) and stays
+  // STATIONARY through the hero and the whole morph; only after the transformation
+  // do the glasses slide left and the image slide right TOGETHER (composeProgress).
+  const statueShiftProgress = composeProgress;   // glasses slide left
+  const plateShiftProgress = composeProgress;    // image slides right (simultaneously)
+  const borderProgress = composeProgress * (1 - galleryExitProgress);
   const heroPlateShift = (window.innerWidth < 720 ? 88 : 210) * plateShiftProgress;
   const tuckedPlateShift = window.innerWidth < 720 ? -64 : -250;
   const tuckedPlateY = (window.innerWidth < 720 ? -46 : -92) * galleryExitProgress;
   const plateShift = heroPlateShift + (tuckedPlateShift - heroPlateShift) * galleryExitProgress;
   const plateScale = 1 - plateShiftProgress * 0.018 - galleryExitProgress * (window.innerWidth < 720 ? 0.040 : 0.076);
-  const plateOpacity = 0.94 - galleryExitProgress * 0.10;
+  const plateOpacity = 0.94 - galleryExitProgress * 0.10;   // visible the whole time
+  statueBacking.style.visibility = '';
 
   scrollSculpture.progress = sculptureTurnOut;
   scrollSculpture.crackProgress = 1;
@@ -8226,23 +8883,23 @@ async function loadLocalStatue(){
       const maxDim = Math.max(size.x, size.y, size.z);
       const scale  = STATUE_TARGET_HEIGHT / maxDim;
 
-      // Centre the geometry on its own centroid — in PIVOT's UNSCALED local space.
-      // Statue keeps scale = 1; pivot below handles the scale, so the offset must NOT be pre-scaled.
+        // Centre the geometry on its own centroid — in PIVOT's UNSCALED local space.
+        // Statue keeps scale = 1; pivot below handles the scale, so the offset must NOT be pre-scaled.
       statue.position.set(-center.x, -center.y, -center.z);
 
-      // Inner pivot — applies scale + base rotation around the now-centered geometry
+        // Inner pivot — applies scale + base rotation around the now-centered geometry
       const pivot = new THREE.Group();
       pivot.add(statue);
       pivot.scale.setScalar(scale);
       // 180° (face-the-camera) + 20° turn toward the viewer's right
       pivot.rotation.y = THREE.MathUtils.degToRad(20);
 
-      // Outer parallax group
+        // Outer parallax group
       statueGroup = new THREE.Group();
       statueGroup.add(pivot);
 
-      // Centre the statue in screen space instead of anchoring it to the bottom.
-      // Measure after scale + rotation so the placement stays stable.
+        // Centre the statue in screen space instead of anchoring it to the bottom.
+        // Measure after scale + rotation so the placement stays stable.
       statueGroup.updateMatrixWorld(true);
       const wBox = new THREE.Box3().setFromObject(statueGroup);
       const wCenter = wBox.getCenter(new THREE.Vector3());
@@ -8305,16 +8962,49 @@ async function loadLocalStatue(){
       statueGroup.position.y = baseY - reveal.lift;
       shadowMat.opacity = prefersReducedMotion ? 0.55 : 0;
       markStatueReady();
-
       requestAnimationFrame(() => {
         startModelReveal();
       });
+      morphKickoff();
+      morph2Kickoff();
+      morph3Kickoff();
       resolve();
     }, (err) => {
       console.error('GLTF parse error:', err);
       reject(err);
     });
   });
+}
+
+/* ----- Glasses: load plastic_sunglasses.glb as an isolated scene group ------
+   Keeps the model's own materials (no shaders). Re-centres on its bounding box
+   so the wrap origin sits at the glasses centre, and records the model→world
+   width scale. Positioned/oriented per-frame in tick() to ride David's nose. */
+function loadGlasses(){
+  if (glassesGroup || glassesState.ready) return;
+  fetch('plastic_sunglasses.glb')
+    .then((res) => { if (!res.ok) throw new Error('glasses fetch ' + res.status); return res.arrayBuffer(); })
+    .then((buffer) => new Promise((resolve, reject) => { new GLTFLoader().parse(buffer, '', resolve, reject); }))
+    .then((gltf) => {
+      const model = gltf.scene;
+      model.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      model.position.sub(center);                       // wrap origin == glasses bbox centre
+      model.traverse((o) => {
+        if (o.isMesh){ o.castShadow = false; o.receiveShadow = false; o.renderOrder = 5; o.frustumCulled = false; }
+      });
+      const wrap = new THREE.Group();
+      wrap.add(model);
+      wrap.visible = false;
+      glassesState.modelWidth = Math.max(size.x, 1e-4);  // for per-frame fit-to-width
+      glassesGroup = wrap;
+      scene.add(glassesGroup);
+      glassesState.ready = true;
+      requestScrollSceneUpdate();
+    })
+    .catch((error) => { console.warn('glasses load failed', error); });
 }
 
 try {
@@ -8412,6 +9102,1244 @@ function updateReliefUniforms(){
 
 /* ----- Render loop ----- */
 const clock = new THREE.Clock();
+/* ==================================================================
+   SPIN-TO-SIGNAL — David particlizes mid-rotation into the glasses.
+   The bust spins one full turn across a 300vh scroll band. Over the
+   first half its stone surface erodes into a charcoal particle cloud
+   (dissolve seam); at mid-spin the particles swarm and converge onto
+   glasses-shaped targets; over the second half the solid glasses
+   materialize (reveal seam) and absorb the cloud. Reuses the proven
+   Stone-to-Signal primitives (simplex noise + area-weighted sampler +
+   dissolve/reveal seam fields) from the particles project.
+   ================================================================== */
+
+/* deterministic simplex — JS mirror of MORPH_NOISE_GLSL (must agree to ~1e-5
+   so the CPU birth/absorb biases line up with the GPU dissolve/reveal). */
+const sigNoise = (() => {
+  const mod289 = (x) => x - Math.floor(x * (1 / 289)) * 289;
+  const permute = (x) => mod289((x * 34 + 10) * x);
+  const taylorInvSqrt = (r) => 1.79284291400159 - 0.85373472095314 * r;
+  const step = (edge, x) => (x < edge ? 0 : 1);
+  const Cx = 1 / 6, Cy = 1 / 3, NSx = 2 / 7, NSy = 0.5 / 7 - 1, NSz = 1 / 7;
+  function snoise(vx, vy, vz){
+    const s = (vx + vy + vz) * Cy;
+    let ix = Math.floor(vx + s), iy = Math.floor(vy + s), iz = Math.floor(vz + s);
+    const t = (ix + iy + iz) * Cx;
+    const x0x = vx - ix + t, x0y = vy - iy + t, x0z = vz - iz + t;
+    const gx = step(x0y, x0x), gy = step(x0z, x0y), gz = step(x0x, x0z);
+    const lx = 1 - gx, ly = 1 - gy, lz = 1 - gz;
+    const i1x = Math.min(gx, lz), i1y = Math.min(gy, lx), i1z = Math.min(gz, ly);
+    const i2x = Math.max(gx, lz), i2y = Math.max(gy, lx), i2z = Math.max(gz, ly);
+    const x1x = x0x - i1x + Cx, x1y = x0y - i1y + Cx, x1z = x0z - i1z + Cx;
+    const x2x = x0x - i2x + Cy, x2y = x0y - i2y + Cy, x2z = x0z - i2z + Cy;
+    const x3x = x0x - 0.5, x3y = x0y - 0.5, x3z = x0z - 0.5;
+    ix = mod289(ix); iy = mod289(iy); iz = mod289(iz);
+    const p = [
+      permute(permute(permute(iz + 0) + iy + 0) + ix + 0),
+      permute(permute(permute(iz + i1z) + iy + i1y) + ix + i1x),
+      permute(permute(permute(iz + i2z) + iy + i2y) + ix + i2x),
+      permute(permute(permute(iz + 1) + iy + 1) + ix + 1)
+    ];
+    const x = new Array(4), y = new Array(4), h = new Array(4);
+    for (let k = 0; k < 4; k++){
+      const j = p[k] - 49 * Math.floor(p[k] * NSz * NSz);
+      const x_ = Math.floor(j * NSz);
+      const y_ = Math.floor(j - 7 * x_);
+      x[k] = x_ * NSx + NSy;
+      y[k] = y_ * NSx + NSy;
+      h[k] = 1 - Math.abs(x[k]) - Math.abs(y[k]);
+    }
+    const b0 = [x[0], x[1], y[0], y[1]];
+    const b1 = [x[2], x[3], y[2], y[3]];
+    const s0 = b0.map((v) => Math.floor(v) * 2 + 1);
+    const s1 = b1.map((v) => Math.floor(v) * 2 + 1);
+    const sh = h.map((v) => -step(v, 0));
+    const a0 = [b0[0] + s0[0] * sh[0], b0[2] + s0[2] * sh[0], b0[1] + s0[1] * sh[1], b0[3] + s0[3] * sh[1]];
+    const a1 = [b1[0] + s1[0] * sh[2], b1[2] + s1[2] * sh[2], b1[1] + s1[1] * sh[3], b1[3] + s1[3] * sh[3]];
+    let g0x = a0[0], g0y = a0[1], g0z = h[0];
+    let g1x = a0[2], g1y = a0[3], g1z = h[1];
+    let g2x = a1[0], g2y = a1[1], g2z = h[2];
+    let g3x = a1[2], g3y = a1[3], g3z = h[3];
+    const n0 = taylorInvSqrt(g0x * g0x + g0y * g0y + g0z * g0z);
+    const n1 = taylorInvSqrt(g1x * g1x + g1y * g1y + g1z * g1z);
+    const n2 = taylorInvSqrt(g2x * g2x + g2y * g2y + g2z * g2z);
+    const n3 = taylorInvSqrt(g3x * g3x + g3y * g3y + g3z * g3z);
+    g0x *= n0; g0y *= n0; g0z *= n0;
+    g1x *= n1; g1y *= n1; g1z *= n1;
+    g2x *= n2; g2y *= n2; g2z *= n2;
+    g3x *= n3; g3y *= n3; g3z *= n3;
+    let m0 = Math.max(0.5 - (x0x * x0x + x0y * x0y + x0z * x0z), 0);
+    let m1 = Math.max(0.5 - (x1x * x1x + x1y * x1y + x1z * x1z), 0);
+    let m2 = Math.max(0.5 - (x2x * x2x + x2y * x2y + x2z * x2z), 0);
+    let m3 = Math.max(0.5 - (x3x * x3x + x3y * x3y + x3z * x3z), 0);
+    m0 *= m0; m1 *= m1; m2 *= m2; m3 *= m3;
+    return 105 * (
+      m0 * m0 * (g0x * x0x + g0y * x0y + g0z * x0z) +
+      m1 * m1 * (g1x * x1x + g1y * x1y + g1z * x1z) +
+      m2 * m2 * (g2x * x2x + g2y * x2y + g2z * x2z) +
+      m3 * m3 * (g3x * x3x + g3y * x3y + g3z * x3z));
+  }
+  const snoise01 = (x, y, z) => 0.5 + 0.5 * snoise(x, y, z);
+  const fieldHead = (px, py, pz, yMin, height) =>
+    0.6 * snoise01(px * 1.8, py * 1.8, pz * 1.8) + 0.4 * ((py - yMin) / height);
+  const fieldGlasses = (px, py, pz, cx, cy, cz, maxDist) => {
+    const dx = px - cx, dy = py - cy, dz = pz - cz;
+    return 0.5 * snoise01(px * 3.0, py * 3.0, pz * 3.0) + 0.5 * (Math.sqrt(dx * dx + dy * dy + dz * dz) / maxDist);
+  };
+  return { snoise, snoise01, fieldHead, fieldGlasses };
+})();
+
+const MORPH_NOISE_GLSL = /* glsl */`
+vec3 nz_mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec4 nz_mod289(vec4 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+vec4 nz_permute(vec4 x) { return nz_mod289(((x * 34.0) + 10.0) * x); }
+vec4 nz_taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+float snoise(vec3 v) {
+  const vec2 C = vec2(1.0 / 6.0, 1.0 / 3.0);
+  const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+  vec3 i = floor(v + dot(v, C.yyy));
+  vec3 x0 = v - i + dot(i, C.xxx);
+  vec3 g = step(x0.yzx, x0.xyz);
+  vec3 l = 1.0 - g;
+  vec3 i1 = min(g.xyz, l.zxy);
+  vec3 i2 = max(g.xyz, l.zxy);
+  vec3 x1 = x0 - i1 + C.xxx;
+  vec3 x2 = x0 - i2 + C.yyy;
+  vec3 x3 = x0 - D.yyy;
+  i = nz_mod289(i);
+  vec4 p = nz_permute(nz_permute(nz_permute(
+      i.z + vec4(0.0, i1.z, i2.z, 1.0))
+      + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+      + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+  float n_ = 0.142857142857;
+  vec3 ns = n_ * D.wyz - D.xzx;
+  vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+  vec4 x_ = floor(j * ns.z);
+  vec4 y_ = floor(j - 7.0 * x_);
+  vec4 x = x_ * ns.x + ns.yyyy;
+  vec4 y = y_ * ns.x + ns.yyyy;
+  vec4 h = 1.0 - abs(x) - abs(y);
+  vec4 b0 = vec4(x.xy, y.xy);
+  vec4 b1 = vec4(x.zw, y.zw);
+  vec4 s0 = floor(b0) * 2.0 + 1.0;
+  vec4 s1 = floor(b1) * 2.0 + 1.0;
+  vec4 sh = -step(h, vec4(0.0));
+  vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
+  vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
+  vec3 p0 = vec3(a0.xy, h.x);
+  vec3 p1 = vec3(a0.zw, h.y);
+  vec3 p2 = vec3(a1.xy, h.z);
+  vec3 p3 = vec3(a1.zw, h.w);
+  vec4 norm = nz_taylorInvSqrt(vec4(dot(p0, p0), dot(p1, p1), dot(p2, p2), dot(p3, p3)));
+  p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+  vec4 m = max(0.5 - vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3)), 0.0);
+  m = m * m;
+  return 105.0 * dot(m * m, vec4(dot(p0, x0), dot(p1, x1), dot(p2, x2), dot(p3, x3)));
+}
+float snoise01(vec3 v) { return 0.5 + 0.5 * snoise(v); }
+vec3 snoise3(vec3 p) {
+  return vec3(snoise(p), snoise(p + vec3(31.7, 11.3, 74.2)), snoise(p + vec3(-17.1, 88.9, 5.3)));
+}
+`;
+
+const MORPH_FIELD_GLSL = /* glsl */`
+float fieldHead(vec3 p, float yMin, float height) {
+  return 0.6 * snoise01(p * 1.8) + 0.4 * (p.y - yMin) / height;
+}
+float fieldGlasses(vec3 p, vec3 center, float maxDist) {
+  return 0.5 * snoise01(p * 3.0) + 0.5 * length(p - center) / maxDist;
+}
+float remapField(float f, float fMin, float fRange) {
+  return 0.02 + (f - fMin) / fRange * 0.90;
+}
+`;
+
+/* area-weighted deterministic triangle sampler (verbatim from particles) */
+function sigMulberry32(seed){
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+class SigSampler {
+  constructor(geometry, rng){
+    this.rng = rng;
+    this.pos = geometry.attributes.position;
+    this.nor = geometry.attributes.normal;
+    if (geometry.index){
+      this.index = geometry.index.array;
+    } else {
+      const n = this.pos.count;
+      const idx = new Uint32Array(n);
+      for (let i = 0; i < n; i++) idx[i] = i;
+      this.index = idx;
+    }
+    const triCount = Math.floor(this.index.length / 3);
+    this.cum = new Float64Array(triCount);
+    const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+    const ab = new THREE.Vector3(), ac = new THREE.Vector3();
+    let total = 0;
+    for (let t = 0; t < triCount; t++){
+      a.fromBufferAttribute(this.pos, this.index[t * 3]);
+      b.fromBufferAttribute(this.pos, this.index[t * 3 + 1]);
+      c.fromBufferAttribute(this.pos, this.index[t * 3 + 2]);
+      ab.subVectors(b, a); ac.subVectors(c, a);
+      total += ab.cross(ac).length() * 0.5;
+      this.cum[t] = total;
+    }
+    this.total = total;
+  }
+  sample(out){
+    const r = this.rng() * this.total;
+    let lo = 0, hi = this.cum.length - 1;
+    while (lo < hi){ const mid = (lo + hi) >> 1; if (this.cum[mid] < r) lo = mid + 1; else hi = mid; }
+    const i0 = this.index[lo * 3], i1 = this.index[lo * 3 + 1], i2 = this.index[lo * 3 + 2];
+    const sq = Math.sqrt(this.rng());
+    const u = 1 - sq, v = this.rng() * sq, w = 1 - u - v;
+    const p = this.pos;
+    out.px = p.getX(i0) * u + p.getX(i1) * v + p.getX(i2) * w;
+    out.py = p.getY(i0) * u + p.getY(i1) * v + p.getY(i2) * w;
+    out.pz = p.getZ(i0) * u + p.getZ(i1) * v + p.getZ(i2) * w;
+    if (this.nor){
+      const n = this.nor;
+      let nx = n.getX(i0) * u + n.getX(i1) * v + n.getX(i2) * w;
+      let ny = n.getY(i0) * u + n.getY(i1) * v + n.getY(i2) * w;
+      let nz = n.getZ(i0) * u + n.getZ(i1) * v + n.getZ(i2) * w;
+      const len = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+      out.nx = nx / len; out.ny = ny / len; out.nz = nz / len;
+    } else { out.nx = 0; out.ny = 1; out.nz = 0; }
+  }
+}
+function sigRemapBias(raw, remap){ return 0.02 + ((raw - remap.min) / remap.range) * 0.9; }
+function sigToFloat32(attr){
+  const out = new Float32Array(attr.count * attr.itemSize);
+  for (let i = 0; i < attr.count; i++)
+    for (let c = 0; c < attr.itemSize; c++) out[i * attr.itemSize + c] = attr.getComponent(i, c);
+  return new THREE.BufferAttribute(out, attr.itemSize);
+}
+
+/* morph state + uniforms are declared early (near the scroll-phase constants)
+   so updateScrollScene()'s init-time call can reference them without a TDZ. */
+
+/* erode patch — discards David's surface past the noise threshold (charcoal
+   front), so particles are "born" exactly where the stone vanishes. */
+function morphApplyErodePatch(material){
+  const prev = material.onBeforeCompile;
+  material.userData.morphErode = true;
+  material.onBeforeCompile = (shader, rendererArg) => {
+    if (prev) prev.call(material, shader, rendererArg);
+    Object.assign(shader.uniforms, morphHeadField);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vSigWorldPos;')
+      .replace('#include <worldpos_vertex>',
+        '#include <worldpos_vertex>\nvSigWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', [
+        '#include <common>', 'varying vec3 vSigWorldPos;',
+        'uniform float uErode;', 'uniform mat4 uHeadMatrixInv;', 'uniform float uFieldScaleHead;',
+        'uniform float uYMinF;', 'uniform float uHeightF;', 'uniform float uFieldMin;', 'uniform float uFieldRange;',
+        MORPH_NOISE_GLSL, MORPH_FIELD_GLSL].join('\n'))
+      .replace('#include <emissivemap_fragment>', /* glsl */ `#include <emissivemap_fragment>
+{
+  vec3 fieldPos = (uHeadMatrixInv * vec4(vSigWorldPos, 1.0)).xyz * uFieldScaleHead;
+  float f = remapField(fieldHead(fieldPos, uYMinF, uHeightF), uFieldMin, uFieldRange);
+  if (f < uErode) discard;
+  float edge = (1.0 - smoothstep(uErode, uErode + 0.07, f)) * smoothstep(0.0, 0.02, uErode);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.14, 0.13, 0.12), edge * 0.9);
+  totalEmissiveRadiance *= (1.0 - 0.85 * edge);
+  if (!gl_FrontFacing) diffuseColor.rgb *= mix(1.0, 0.4, smoothstep(0.0, 0.05, uErode));
+}`);
+  };
+  material.needsUpdate = true;
+}
+function morphPatchStatueMaterials(){
+  // David is rendered by many fracture-fragment materials (not all live in
+  // statueMaterials), so erode-patch every Standard/Physical material under
+  // statueGroup — except the morph's own solid glasses (uses the reveal patch).
+  const seen = new Set();
+  statueGroup.traverse((o) => {
+    if (!o.isMesh) return;
+    const mats = Array.isArray(o.material) ? o.material : [o.material];
+    for (const mat of mats){
+      if (!mat || seen.has(mat)) continue;
+      seen.add(mat);
+      if (mat.userData && mat.userData.morphReveal) continue;   // the solid glasses
+      if (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial) morphApplyErodePatch(mat);
+    }
+  });
+}
+
+/* reveal patch — the solid glasses materializes from bridge -> temples as the
+   particles arrive, mirroring the dissolve (same noise field). */
+function morphPatchGlassesMaterial(material, maxDist, remap, uRevealUniform = morphU.uReveal, uErodeUniform = null){
+  material.userData.morphReveal = true;
+  material.customProgramCacheKey = () => `morph-field-solid-clamped-${uErodeUniform ? 'reveal-erode' : 'reveal'}-v2`;
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, {
+      uReveal: uRevealUniform,
+      uGlassesMaxDist: { value: maxDist },
+      uFieldMinG: { value: remap.min },
+      uFieldRangeG: { value: remap.range }
+    });
+    // optional STAGE-2 seam erode (same field) so the SOLID glasses surface eats
+    // away into particles instead of cross-fading. Driven by morphU2.uDissolve.
+    const erodeDecl = uErodeUniform ? 'uniform float uErode2;' : '';
+    const erodeBody = uErodeUniform ? `
+  if (f < uErode2) discard;                                   // surface peels off as the cloud is born
+  float edge2 = (1.0 - smoothstep(uErode2, uErode2 + 0.07, f)) * smoothstep(0.0, 0.02, uErode2);
+  totalEmissiveRadiance += vec3(0.5, 0.5, 0.55) * edge2;` : '';
+    if (uErodeUniform) shader.uniforms.uErode2 = uErodeUniform;
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vSigLocalPos;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSigLocalPos = position;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', [
+        '#include <common>', 'varying vec3 vSigLocalPos;',
+        'uniform float uReveal;', 'uniform float uGlassesMaxDist;', 'uniform float uFieldMinG;', 'uniform float uFieldRangeG;',
+        erodeDecl,
+        MORPH_NOISE_GLSL, MORPH_FIELD_GLSL].join('\n'))
+      .replace('#include <emissivemap_fragment>', /* glsl */ `#include <emissivemap_fragment>
+{
+  float f = clamp(remapField(fieldGlasses(vSigLocalPos, vec3(0.0), uGlassesMaxDist), uFieldMinG, uFieldRangeG), 0.02, 0.92);
+  if (f > uReveal) discard;
+  float edge = (1.0 - smoothstep(uReveal - 0.08, uReveal, f)) * (1.0 - smoothstep(0.93, 1.0, uReveal));
+  totalEmissiveRadiance += vec3(0.5, 0.5, 0.55) * edge;${erodeBody}
+}`);
+  };
+  material.needsUpdate = true;
+}
+
+/* glasses normalization: bake transforms, merge, center, scale to 1.8 wide */
+function morphNormalizeGlasses(root){
+  root.updateMatrixWorld(true);
+  const geos = [];
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    let g = new THREE.BufferGeometry();
+    g.setAttribute('position', sigToFloat32(o.geometry.attributes.position));
+    if (o.geometry.attributes.normal) g.setAttribute('normal', sigToFloat32(o.geometry.attributes.normal));
+    if (o.geometry.index) g.setIndex(o.geometry.index.clone());
+    g.applyMatrix4(o.matrixWorld);
+    if (g.index) g = g.toNonIndexed();
+    geos.push(g);
+  });
+  if (!geos.length) throw new Error('glasses: no meshes');
+  const merged = geos.length === 1 ? geos[0] : mergeGeometries(geos, false);
+  if (!merged.attributes.normal) merged.computeVertexNormals();
+  const box = new THREE.Box3().setFromBufferAttribute(merged.attributes.position);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const scale = 1.8 / Math.max(size.x, 1e-4);
+  merged.translate(-center.x, -center.y, -center.z);
+  merged.scale(scale, scale, scale);
+  merged.computeBoundingBox(); merged.computeBoundingSphere();
+  let maxDist = 0; const p = merged.attributes.position;
+  for (let i = 0; i < p.count; i++){
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const d = Math.sqrt(x * x + y * y + z * z); if (d > maxDist) maxDist = d;
+  }
+  return { geometry: merged, maxDist };
+}
+
+/* ----- points cloud shaders ----- */
+const MORPH_POINTS_VERT = /* glsl */`
+attribute vec3 aHead;
+attribute vec3 aHeadN;
+attribute vec3 aGlass;
+attribute float aSeed;
+attribute float aDBias;
+attribute float aRBias;
+uniform float uDissolve, uMorph, uScatter, uReveal, uTime, uSize, uPixelRatio;
+varying float vAlpha;
+varying float vSpark;
+${MORPH_NOISE_GLSL}
+void main(){
+  float born = smoothstep(aDBias - 0.06, aDBias, uDissolve);
+  float die  = smoothstep(aRBias - 0.06, aRBias, uReveal);
+
+  float travel = smoothstep(0.0, 1.0, uMorph);
+  vec3 base = mix(aHead, aGlass, travel);
+
+  float bloom = uScatter;
+  vec3 disp = aHeadN * (0.18 + 0.34 * aSeed) * bloom;
+  disp += snoise3(aHead * 2.3 + vec3(aSeed * 21.0) + uTime * 0.15) * (0.26 * bloom);
+  disp.y += 0.12 * bloom * (0.4 + aSeed);
+  vec3 p = base + disp;
+
+  vec4 mv = modelViewMatrix * vec4(p, 1.0);
+  gl_Position = projectionMatrix * mv;
+  float size = uSize * (0.5 + 1.0 * aSeed);
+  gl_PointSize = size * uPixelRatio * (3.4 / max(-mv.z, 0.1));
+
+  vSpark = exp(-pow((uDissolve - aDBias) / 0.05, 2.0));   // bright flash at birth
+  vAlpha = born * (1.0 - die);
+}
+`;
+const MORPH_POINTS_FRAG = /* glsl */`
+precision highp float;
+uniform vec3 uColor;
+varying float vAlpha;
+varying float vSpark;
+void main(){
+  vec2 d = gl_PointCoord - 0.5;
+  float r2 = dot(d, d);
+  if (r2 > 0.25) discard;
+  float a = vAlpha * smoothstep(0.25, 0.03, r2);
+  if (a < 0.01) discard;
+  vec3 col = mix(uColor, vec3(0.95, 0.92, 0.86), clamp(vSpark, 0.0, 1.0));
+  gl_FragColor = vec4(col, a);
+}
+`;
+
+/* ----- build (runs once both David + glasses geometry are ready) ----- */
+function morphBuild(glassesGeometry, glassesMaxDist){
+  try {
+    // head sampling surface = largest intact fracture mesh, baked into
+    // statueGroup-LOCAL space (constant under scroll/parallax/spin)
+    let intact = null;
+    for (const mesh of fractureIntactObjects)
+      if (!intact || mesh.geometry.attributes.position.count > intact.geometry.attributes.position.count) intact = mesh;
+    if (!intact) throw new Error('no intact statue mesh');
+    statueGroup.updateMatrixWorld(true);
+    const rel = new THREE.Matrix4().copy(statueGroup.matrixWorld).invert().multiply(intact.matrixWorld);
+    const headGeo = new THREE.BufferGeometry();
+    headGeo.setAttribute('position', sigToFloat32(intact.geometry.attributes.position));
+    if (intact.geometry.attributes.normal) headGeo.setAttribute('normal', sigToFloat32(intact.geometry.attributes.normal));
+    if (intact.geometry.index) headGeo.setIndex(intact.geometry.index.clone());
+    headGeo.applyMatrix4(rel);
+
+    const headBox = new THREE.Box3().setFromBufferAttribute(headGeo.attributes.position);
+    const headCenter = headBox.getCenter(new THREE.Vector3());
+    const localHeight = Math.max(headBox.max.y - headBox.min.y, 1e-4);
+    const headWidth = Math.max(headBox.max.x - headBox.min.x, 1e-4);
+    const fieldScale = 2.0 / localHeight;        // restore the 2.0-tall noise-feature scale
+    const yMinF = headBox.min.y * fieldScale;
+    const heightF = localHeight * fieldScale;
+
+    // glasses placement in statueGroup-local: sit over the eyes, ~head width
+    const gBox = new THREE.Box3().setFromBufferAttribute(glassesGeometry.attributes.position);
+    const gSize = gBox.getSize(new THREE.Vector3());
+    const glassScale = (headWidth * 0.95) / Math.max(gSize.x, 1e-4);
+    // Centre the glasses on screen at the reveal: at the band the bust carries an
+    // inherited yaw (~50deg hero turn) + scale (~1.14) about statueGroup's origin
+    // (world x = baseX), which swings any off-axis point sideways. Solve glassPos.x
+    // so the glasses land at world x = 0. (z = head depth, y = head level.)
+    const REVEAL_YAW = THREE.MathUtils.degToRad(50);
+    const REVEAL_SCALE = 1.14;
+    const glassPos = headCenter.clone();
+    glassPos.x = (-baseX / REVEAL_SCALE - headCenter.z * Math.sin(REVEAL_YAW)) / Math.cos(REVEAL_YAW);
+    // statueGroup carries the hero turn (scrollYaw = +50deg) through the band, so
+    // counter it here: the glasses face the camera when the 360deg spin lands (net 0).
+    const glassQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -THREE.MathUtils.degToRad(50));
+    const glassMat4 = new THREE.Matrix4().compose(glassPos, glassQuat, new THREE.Vector3(glassScale, glassScale, glassScale));
+
+    const N = MORPH_COUNT;
+    const rng = sigMulberry32(0xc0ffee);
+    const tmp = { px: 0, py: 0, pz: 0, nx: 0, ny: 0, nz: 0 };
+
+    const headSampler = new SigSampler(headGeo, rng);
+    const headPts = new Array(N);
+    for (let i = 0; i < N; i++){
+      headSampler.sample(tmp);
+      headPts[i] = { px: tmp.px, py: tmp.py, pz: tmp.pz, nx: tmp.nx, ny: tmp.ny, nz: tmp.nz,
+        theta: Math.atan2(tmp.px - headCenter.x, tmp.pz - headCenter.z), seed: rng() };
+    }
+    const glassSampler = new SigSampler(glassesGeometry, rng);
+    const glassPts = new Array(N);
+    for (let i = 0; i < N; i++){
+      glassSampler.sample(tmp);
+      glassPts[i] = { lx: tmp.px, ly: tmp.py, lz: tmp.pz, theta: Math.atan2(tmp.px, tmp.pz) };
+    }
+    // azimuth-rank + per-window height pairing so the cloud converges coherently
+    headPts.sort((a, b) => a.theta - b.theta);
+    glassPts.sort((a, b) => a.theta - b.theta);
+    const WIN = 80;
+    for (let s = 0; s < N; s += WIN){
+      const e = Math.min(s + WIN, N);
+      const hw = headPts.slice(s, e).sort((a, b) => b.py - a.py);
+      const gw = glassPts.slice(s, e).sort((a, b) => b.ly - a.ly);
+      for (let k = 0; k < hw.length; k++){ headPts[s + k] = hw[k]; glassPts[s + k] = gw[k]; }
+    }
+    // dissolve / reveal biases via the SAME fields the shaders evaluate
+    const dRaw = new Float32Array(N); let dMin = Infinity, dMax = -Infinity;
+    for (let i = 0; i < N; i++){
+      const h = headPts[i];
+      const f = sigNoise.fieldHead(h.px * fieldScale, h.py * fieldScale, h.pz * fieldScale, yMinF, heightF);
+      dRaw[i] = f; if (f < dMin) dMin = f; if (f > dMax) dMax = f;
+    }
+    const headRemap = { min: dMin, range: Math.max(dMax - dMin, 1e-6) };
+    const rRaw = new Float32Array(N); let rMin = Infinity, rMax = -Infinity;
+    for (let i = 0; i < N; i++){
+      const g = glassPts[i];
+      const f = sigNoise.fieldGlasses(g.lx, g.ly, g.lz, 0, 0, 0, glassesMaxDist);
+      rRaw[i] = f; if (f < rMin) rMin = f; if (f > rMax) rMax = f;
+    }
+    const glassRemap = { min: rMin, range: Math.max(rMax - rMin, 1e-6) };
+
+    const aHead = new Float32Array(N * 3), aHeadN = new Float32Array(N * 3), aGlass = new Float32Array(N * 3);
+    const aSeed = new Float32Array(N), aD = new Float32Array(N), aR = new Float32Array(N);
+    const gv = new THREE.Vector3();
+    for (let i = 0; i < N; i++){
+      const h = headPts[i], g = glassPts[i];
+      aHead[i*3] = h.px; aHead[i*3+1] = h.py; aHead[i*3+2] = h.pz;
+      aHeadN[i*3] = h.nx; aHeadN[i*3+1] = h.ny; aHeadN[i*3+2] = h.nz;
+      gv.set(g.lx, g.ly, g.lz).applyMatrix4(glassMat4);
+      aGlass[i*3] = gv.x; aGlass[i*3+1] = gv.y; aGlass[i*3+2] = gv.z;
+      aSeed[i] = h.seed;
+      aD[i] = Math.min(Math.max(sigRemapBias(dRaw[i], headRemap), 0.02), 0.92);
+      aR[i] = Math.min(Math.max(sigRemapBias(rRaw[i], glassRemap), 0.02), 0.92);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(aHead.slice(), 3));
+    geo.setAttribute('aHead', new THREE.BufferAttribute(aHead, 3));
+    geo.setAttribute('aHeadN', new THREE.BufferAttribute(aHeadN, 3));
+    geo.setAttribute('aGlass', new THREE.BufferAttribute(aGlass, 3));
+    geo.setAttribute('aSeed', new THREE.BufferAttribute(aSeed, 1));
+    geo.setAttribute('aDBias', new THREE.BufferAttribute(aD, 1));
+    geo.setAttribute('aRBias', new THREE.BufferAttribute(aR, 1));
+    geo.boundingSphere = new THREE.Sphere(headCenter.clone(), localHeight * 2.2);
+
+    const mat = new THREE.ShaderMaterial({
+      uniforms: morphU,
+      vertexShader: MORPH_POINTS_VERT,
+      fragmentShader: MORPH_POINTS_FRAG,
+      transparent: true, depthWrite: false, depthTest: true, blending: THREE.NormalBlending
+    });
+    morphPoints = new THREE.Points(geo, mat);
+    morphPoints.frustumCulled = false;
+    morphPoints.renderOrder = 8;
+    morphPoints.visible = false;
+    statueGroup.add(morphPoints);   // inherits David's transform (spin/parallax/scale)
+
+    // solid glasses for the reveal — child of statueGroup so it spins in register
+    const gMat = new THREE.MeshPhysicalMaterial({
+      color: 0x16181c, roughness: 0.32, metalness: 0.1, clearcoat: 0.6,
+      clearcoatRoughness: 0.25, envMapIntensity: 0.6, side: THREE.DoubleSide
+    });
+    // 5th arg = stage-2 seam erode driver: the glasses surface peels into particles
+    // (morphU2.uDissolve) during the carousel glasses->iPhone morph. Inert in stage 1.
+    morphPatchGlassesMaterial(gMat, glassesMaxDist, glassRemap, morphU.uReveal, morphU2.uDissolve);
+    const gMesh = new THREE.Mesh(glassesGeometry, gMat);
+    gMesh.frustumCulled = false;
+    gMesh.renderOrder = 9;
+    gMesh.position.copy(glassPos);
+    gMesh.quaternion.copy(glassQuat);
+    gMesh.scale.setScalar(glassScale);
+    gMesh.visible = false;
+    statueGroup.add(gMesh);
+    morphGlasses = gMesh;
+
+    // wire the shared head-field uniforms + erode David's surface
+    morphHeadField.uFieldScaleHead.value = fieldScale;
+    morphHeadField.uYMinF.value = yMinF;
+    morphHeadField.uHeightF.value = heightF;
+    morphHeadField.uFieldMin.value = headRemap.min;
+    morphHeadField.uFieldRange.value = headRemap.range;
+    morphPatchStatueMaterials();
+
+    MORPH.ready = true;
+    requestScrollSceneUpdate();
+  } catch (e){
+    console.warn('morph: build failed', e);
+    MORPH.failed = true;
+  }
+}
+
+function morphKickoff(){
+  if (MORPH.kicked || MORPH.failed) return;
+  MORPH.kicked = true;
+  fetch('plastic_sunglasses.glb')
+    .then((res) => { if (!res.ok) throw new Error('glasses fetch ' + res.status); return res.arrayBuffer(); })
+    .then((buffer) => new Promise((resolve, reject) => { new GLTFLoader().parse(buffer, '', resolve, reject); }))
+    .then((gltf) => {
+      const norm = morphNormalizeGlasses(gltf.scene);
+      // Deterministic deferral (a couple frames) so the build never hitches the
+      // reveal, but doesn't depend on the page going idle (it may not under load).
+      setTimeout(() => morphBuild(norm.geometry, norm.maxDist), 250);
+    })
+    .catch((e) => { console.warn('morph: glasses load failed', e); MORPH.failed = true; });
+}
+
+/* timeline: band progress m (0..1) -> uniforms + spin + plate fade */
+function morphEvalTimeline(m){
+  m = clamp01(m);
+  MORPH.m = m;
+  MORPH.yaw = smoothstep(0, 1, m) * Math.PI * 2.0;          // full turn, eased ends, 180 deg at m=0.5
+  morphU.uDissolve.value = clamp01((m - 0.06) / 0.44);      // particles born, m in [0.06,0.50]
+  morphU.uErode.value    = clamp01((m - 0.075) / 0.44);     // David dies (lags a hair)
+  morphU.uMorph.value    = smoothstep(0.30, 0.82, m);       // travel head -> glasses
+  morphU.uScatter.value  = Math.sin(Math.PI * m);           // bloom peaks mid-band
+  morphU.uReveal.value   = clamp01((m - 0.60) / 0.40);      // glasses materialize, m in [0.60,1.0]
+}
+
+const _morphTmpInv = new THREE.Matrix4();
+function morphUpdate(t){
+  if (!MORPH.ready) return;
+  morphU.uTime.value = t;
+  // field space = statueGroup-local: strip the live world transform (incl. spin)
+  statueGroup.updateWorldMatrix(true, false);
+  morphHeadField.uHeadMatrixInv.value.copy(statueGroup.matrixWorld).invert();
+  if (morphPoints) morphPoints.visible = MORPH.m > 0.001 && MORPH.m < 0.999;
+  if (morphGlasses) morphGlasses.visible = morphU.uReveal.value > 0.002;
+  // Crack/border outlines are LineBasicMaterial (no erode patch); the fracture
+  // loop resets their opacity each frame, so cap it down to dissolve them with
+  // David rather than leaving wireframe slivers floating in the cloud.
+  if (MORPH.m > 0.001){
+    const cap = 1 - smoothstep(0.04, 0.20, MORPH.m);
+    for (const mm of fractureTriangulationMaterials) if (mm) mm.opacity *= cap;
+    for (const mm of fractureBorderMaterials) if (mm) mm.opacity *= cap;
+  }
+}
+
+/* verification / live-tuning hook */
+window.__MORPH = {
+  U: morphU, state: MORPH, look: morphHeadField,
+  park(m){ morphEvalTimeline(typeof m === 'number' ? m : MORPH.m); requestScrollSceneUpdate(); },
+  get points(){ return morphPoints; },
+  get glasses(){ return morphGlasses; }
+};
+
+/* ============================================================================
+   STAGE 2 — glasses -> iPhone morph (carousel image 1 -> 2). Self-contained;
+   reuses the shared point shaders / sampler / noise fields. Children of
+   statueGroup so they ride the parked left-accent transform. ============== */
+
+/* iphone normalization: bake transforms, merge, center, scale so the LARGEST
+   dimension ~= 1.8 (phones are tall/thin; scale by max dim, not width). */
+function morph2NormalizeIphone(root){
+  root.updateMatrixWorld(true);
+  // iphone.glb is a product scene with 3 colour variants (Blue/Grey/Orange groups);
+  // morph into ONE phone only. (Material is overridden to dark monochrome anyway.)
+  const one = root.getObjectByName('Grey') || root.getObjectByName('Blue')
+           || root.getObjectByName('Orange') || root;
+  one.updateMatrixWorld(true);
+  const geos = [];
+  one.traverse((o) => {
+    if (!o.isMesh) return;
+    let g = new THREE.BufferGeometry();
+    g.setAttribute('position', sigToFloat32(o.geometry.attributes.position));
+    if (o.geometry.attributes.normal) g.setAttribute('normal', sigToFloat32(o.geometry.attributes.normal));
+    if (o.geometry.index) g.setIndex(o.geometry.index.clone());
+    g.applyMatrix4(o.matrixWorld);
+    if (g.index) g = g.toNonIndexed();
+    geos.push(g);
+  });
+  if (!geos.length) throw new Error('iphone: no meshes');
+  const merged = geos.length === 1 ? geos[0] : mergeGeometries(geos, false);
+  if (!merged.attributes.normal) merged.computeVertexNormals();
+  const box = new THREE.Box3().setFromBufferAttribute(merged.attributes.position);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const scale = 1.8 / Math.max(size.x, size.y, size.z, 1e-4);
+  merged.translate(-center.x, -center.y, -center.z);
+  merged.scale(scale, scale, scale);
+  merged.computeBoundingBox(); merged.computeBoundingSphere();
+  let maxDist = 0; const p = merged.attributes.position;
+  for (let i = 0; i < p.count; i++){
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const d = Math.sqrt(x*x + y*y + z*z); if (d > maxDist) maxDist = d;
+  }
+  return { geometry: merged, maxDist };
+}
+
+/* build (runs once morphGlasses exists AND iphone geometry is loaded) */
+function morph2Build(){
+  try {
+    if (!morphGlasses || !morph2IphoneGeo) throw new Error('morph2: source/target not ready');
+    statueGroup.updateMatrixWorld(true);
+    morphGlasses.updateMatrix();
+
+    // SOURCE: glasses geometry in statueGroup-local (= glasses local * morphGlasses.matrix)
+    const srcGeo = morphGlasses.geometry;
+    const srcMat4 = morphGlasses.matrix.clone();           // pos/quat/scale of the parked glasses slot
+    const srcBox = new THREE.Box3().setFromBufferAttribute(srcGeo.attributes.position);
+    const srcSize = srcBox.getSize(new THREE.Vector3());
+    const srcMaxDist = Math.max(1e-4, srcSize.length() * 0.5);
+
+    // TARGET: iphone placed at the glasses slot, sized to a comparable on-screen size.
+    const gWidth = Math.max(1e-4, srcSize.x) * morphGlasses.scale.x;
+    const iBoxL = new THREE.Box3().setFromBufferAttribute(morph2IphoneGeo.attributes.position);
+    const iSizeL = iBoxL.getSize(new THREE.Vector3());
+    // match the phone's HEIGHT to ~the glasses width so it reads at a similar scale
+    const phoneScale = (gWidth / Math.max(iSizeL.y, 1e-4)) * PHONE_LOOK.scaleMul;
+    const phonePos = morphGlasses.position.clone().add(
+      new THREE.Vector3(PHONE_LOOK.offX, PHONE_LOOK.offY, PHONE_LOOK.offZ));
+    const phoneQuat = morphGlasses.quaternion.clone().multiply(
+      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), THREE.MathUtils.degToRad(PHONE_LOOK.yawDeg)));
+    const phoneMat4 = new THREE.Matrix4().compose(
+      phonePos, phoneQuat, new THREE.Vector3(phoneScale, phoneScale, phoneScale));
+
+    const N = MORPH_COUNT;
+    const rng = sigMulberry32(0xb0bafe);
+    const tmp = { px:0, py:0, pz:0, nx:0, ny:0, nz:0 };
+
+    // sample SOURCE (glasses local): record local pos (for reveal-style field) + normal + seed
+    const srcSampler = new SigSampler(srcGeo, rng);
+    const srcPts = new Array(N);
+    for (let i = 0; i < N; i++){
+      srcSampler.sample(tmp);
+      srcPts[i] = { lx: tmp.px, ly: tmp.py, lz: tmp.pz, nx: tmp.nx, ny: tmp.ny, nz: tmp.nz,
+        theta: Math.atan2(tmp.px, tmp.pz), seed: rng() };
+    }
+    // sample TARGET (iphone local)
+    const dstSampler = new SigSampler(morph2IphoneGeo, rng);
+    const dstPts = new Array(N);
+    for (let i = 0; i < N; i++){
+      dstSampler.sample(tmp);
+      dstPts[i] = { lx: tmp.px, ly: tmp.py, lz: tmp.pz, theta: Math.atan2(tmp.px, tmp.pz) };
+    }
+    // azimuth-rank + per-window height pairing (identical strategy to the hero morph)
+    srcPts.sort((a,b)=>a.theta-b.theta);
+    dstPts.sort((a,b)=>a.theta-b.theta);
+    const WIN = 80;
+    for (let s = 0; s < N; s += WIN){
+      const e = Math.min(s + WIN, N);
+      const sw = srcPts.slice(s, e).sort((a,b)=>b.ly-a.ly);
+      const dw = dstPts.slice(s, e).sort((a,b)=>b.ly-a.ly);
+      for (let k = 0; k < sw.length; k++){ srcPts[s+k]=sw[k]; dstPts[s+k]=dw[k]; }
+    }
+    // dissolve bias over glasses, reveal bias over iphone (same fields the shaders use)
+    const dRaw = new Float32Array(N); let dMin=Infinity, dMax=-Infinity;
+    for (let i=0;i<N;i++){ const s=srcPts[i];
+      const f = sigNoise.fieldGlasses(s.lx, s.ly, s.lz, 0,0,0, srcMaxDist);
+      dRaw[i]=f; if(f<dMin)dMin=f; if(f>dMax)dMax=f; }
+    const srcRemap = { min:dMin, range:Math.max(dMax-dMin,1e-6) };
+    const rRaw = new Float32Array(N); let rMin=Infinity, rMax=-Infinity;
+    for (let i=0;i<N;i++){ const d=dstPts[i];
+      const f = sigNoise.fieldGlasses(d.lx, d.ly, d.lz, 0,0,0, morph2IphoneMaxDist);
+      rRaw[i]=f; if(f<rMin)rMin=f; if(f>rMax)rMax=f; }
+    const dstRemap = { min:rMin, range:Math.max(rMax-rMin,1e-6) };
+
+    const aHead=new Float32Array(N*3), aHeadN=new Float32Array(N*3), aGlass=new Float32Array(N*3);
+    const aSeed=new Float32Array(N), aD=new Float32Array(N), aR=new Float32Array(N);
+    const sv=new THREE.Vector3(), nv=new THREE.Vector3(), dv=new THREE.Vector3();
+    const normalMat = new THREE.Matrix3().getNormalMatrix(srcMat4);
+    for (let i=0;i<N;i++){
+      const s=srcPts[i], d=dstPts[i];
+      // positions baked RELATIVE to the phone center (the pivot) so the spin is in-place
+      sv.set(s.lx,s.ly,s.lz).applyMatrix4(srcMat4).sub(phonePos);
+      nv.set(s.nx,s.ny,s.nz).applyMatrix3(normalMat).normalize();
+      dv.set(d.lx,d.ly,d.lz).applyMatrix4(phoneMat4).sub(phonePos);
+      aHead[i*3]=sv.x; aHead[i*3+1]=sv.y; aHead[i*3+2]=sv.z;          // SOURCE (glasses) rel. to pivot
+      aHeadN[i*3]=nv.x; aHeadN[i*3+1]=nv.y; aHeadN[i*3+2]=nv.z;
+      aGlass[i*3]=dv.x; aGlass[i*3+1]=dv.y; aGlass[i*3+2]=dv.z;        // TARGET (iphone) rel. to pivot
+      aSeed[i]=s.seed;
+      aD[i]=Math.min(Math.max(sigRemapBias(dRaw[i], srcRemap),0.02),0.92);
+      aR[i]=Math.min(Math.max(sigRemapBias(rRaw[i], dstRemap),0.02),0.92);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(aHead.slice(),3));
+    geo.setAttribute('aHead', new THREE.BufferAttribute(aHead,3));
+    geo.setAttribute('aHeadN', new THREE.BufferAttribute(aHeadN,3));
+    geo.setAttribute('aGlass', new THREE.BufferAttribute(aGlass,3));
+    geo.setAttribute('aSeed', new THREE.BufferAttribute(aSeed,1));
+    geo.setAttribute('aDBias', new THREE.BufferAttribute(aD,1));
+    geo.setAttribute('aRBias', new THREE.BufferAttribute(aR,1));
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0,0,0), 6.0);
+
+    // pivot group AT the phone center: everything (cloud + iphone) is its child and
+    // baked relative to it, so morph2Pivot.rotation.y spins them IN PLACE (not orbiting
+    // statueGroup's far-off origin, which was making the parked phone swing off-centre).
+    morph2Pivot = new THREE.Group();
+    morph2Pivot.position.copy(phonePos);
+    statueGroup.add(morph2Pivot);
+
+    const mat = new THREE.ShaderMaterial({
+      uniforms: morphU2,
+      vertexShader: MORPH_POINTS_VERT, fragmentShader: MORPH_POINTS_FRAG,
+      transparent:true, depthWrite:false, depthTest:true, blending:THREE.NormalBlending
+    });
+    morph2Points = new THREE.Points(geo, mat);
+    morph2Points.frustumCulled = false;
+    morph2Points.renderOrder = 8;
+    morph2Points.visible = false;
+    morph2Pivot.add(morph2Points);
+
+    // solid iPhone reveal mesh. Use the same field-discard material seam as the
+    // sculpture->glasses pass: it reassembles from the particle arrival field in
+    // Stage 2, then peels into particles again for Stage 3.
+    const iMat = new THREE.MeshPhysicalMaterial({
+      color: 0x16181c, roughness: 0.34, metalness: 0.25, clearcoat: 0.5,
+      clearcoatRoughness: 0.3, envMapIntensity: 0.7, side: THREE.DoubleSide
+    });
+    morphPatchGlassesMaterial(iMat, morph2IphoneMaxDist, dstRemap, morphU2.uReveal, morphU3.uDissolve);
+    const iMesh = new THREE.Mesh(morph2IphoneGeo, iMat);
+    iMesh.frustumCulled = false;
+    iMesh.renderOrder = 9;
+    iMesh.position.set(0, 0, 0);            // pivot already sits at phonePos
+    iMesh.quaternion.copy(phoneQuat);
+    iMesh.scale.setScalar(phoneScale);
+    iMesh.visible = false;
+    morph2Pivot.add(iMesh);
+    morph2Iphone = iMesh;
+
+    MORPH2.ready = true;
+    requestScrollSceneUpdate();
+  } catch (e){
+    console.warn('morph2: build failed', e);
+    MORPH2.failed = true;
+  }
+}
+
+/* same curve as the hero morphEvalTimeline, driving morphU2 + the stage-2 spin */
+function morph2EvalTimeline(m){
+  m = clamp01(m);
+  MORPH2.m = m;
+  MORPH2.yaw = smoothstep(0, 1, m) * Math.PI * 2.0;     // full turn, eased ends
+  // STAGED + SYMMETRIC so the reverse (iPhone->glasses) reads the same as forward:
+  // peel [0.05,0.39] -> travel [0.39,0.61] (middle only) -> reveal [0.61,0.95].
+  // Travel no longer overlaps the solid windows, so scrolling BACK the particles
+  // fully gather into the glasses shape BEFORE the solid glasses materializes
+  // (white reveal seam -> black), mirroring the forward iPhone reveal.
+  morphU2.uDissolve.value = clamp01((m - 0.05) / 0.34);
+  morphU2.uErode.value    = clamp01((m - 0.065) / 0.34);
+  morphU2.uMorph.value    = smoothstep(0.39, 0.61, m);
+  morphU2.uScatter.value  = Math.sin(Math.PI * m);
+  morphU2.uReveal.value   = clamp01((m - 0.61) / 0.34);
+}
+
+function morph2Update(t){
+  if (!MORPH2.ready) return;
+  morphU2.uTime.value = t;
+  const m = MORPH2.m;
+  if (morph2Pivot) morph2Pivot.rotation.y = MORPH2.yaw;   // 360deg spin about the phone's OWN centre
+
+  if (morph2Points) morph2Points.visible = m > 0.001 && m < 0.999;
+  if (morph2Iphone){
+    morph2Iphone.visible = morphU2.uReveal.value > 0.002;
+  }
+  // SOURCE erode is handled IN-SHADER (the glasses material's stage-2 seam erode,
+  // morphU2.uDissolve): the solid surface peels into particles. No opacity hack.
+}
+
+function morph2Kickoff(){
+  if (MORPH2.kicked || MORPH2.failed) return;
+  MORPH2.kicked = true;
+  fetch('iphone.glb')
+    .then((res) => { if (!res.ok) throw new Error('iphone fetch ' + res.status); return res.arrayBuffer(); })
+    .then((buffer) => new Promise((resolve, reject) => { new GLTFLoader().parse(buffer, '', resolve, reject); }))
+    .then((gltf) => {
+      const norm = morph2NormalizeIphone(gltf.scene);
+      morph2IphoneGeo = norm.geometry;
+      morph2IphoneMaxDist = norm.maxDist;
+      // build only once the hero glasses mesh exists (stage-1 build done)
+      const tryBuild = () => {
+        if (MORPH.ready && morphGlasses) morph2Build();
+        else if (!MORPH.failed) setTimeout(tryBuild, 120);
+      };
+      tryBuild();
+    })
+    .catch((e) => { console.warn('morph2: iphone load failed', e); MORPH2.failed = true; });
+}
+
+/* verification / live-tuning hook */
+window.__MORPH2 = {
+  U: morphU2, state: MORPH2, look: PHONE_LOOK,
+  park(m){ morph2EvalTimeline(typeof m === 'number' ? m : MORPH2.m); requestScrollSceneUpdate(); },
+  rebuild(){   // re-run build after tweaking PHONE_LOOK (tuning aid)
+    if (morph2Pivot){ statueGroup.remove(morph2Pivot); morph2Pivot = null; }
+    morph2Points = null; morph2Iphone = null;
+    MORPH2.ready = false;
+    if (morph2IphoneGeo) morph2Build();
+    requestScrollSceneUpdate();
+  },
+  get points(){ return morph2Points; },
+  get iphone(){ return morph2Iphone; },
+  // screen-space bbox (px) of an object's geometry — tuning aid to match the phone
+  // footprint to the glasses footprint. Pass 'glasses' or 'iphone'.
+  bbox(which){
+    const o = which === 'iphone' ? morph2Iphone : morphGlasses;
+    if (!o || !o.geometry) return null;
+    o.updateWorldMatrix(true, false);
+    o.geometry.computeBoundingBox();
+    const bb = o.geometry.boundingBox, v = new THREE.Vector3();
+    let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+    for (let i=0;i<8;i++){
+      v.set(i&1?bb.max.x:bb.min.x, i&2?bb.max.y:bb.min.y, i&4?bb.max.z:bb.min.z);
+      o.localToWorld(v); v.project(camera);
+      const sx=(v.x*0.5+0.5)*window.innerWidth, sy=(1-(v.y*0.5+0.5))*window.innerHeight;
+      minx=Math.min(minx,sx);maxx=Math.max(maxx,sx);miny=Math.min(miny,sy);maxy=Math.max(maxy,sy);
+    }
+    return {cx:Math.round((minx+maxx)/2),cy:Math.round((miny+maxy)/2),w:Math.round(maxx-minx),h:Math.round(maxy-miny),minx:Math.round(minx),maxx:Math.round(maxx),vw:window.innerWidth};
+  }
+};
+
+/* ===================== STAGE 3: iPhone -> black image-icon ===================== */
+
+/* Procedural 3D model built from the "image" SVG (rounded-rect frame + dot + arc),
+   reinterpreted VOLUMETRICALLY: deep box frame ring + sphere dot + tube ridge, so it
+   reads from any angle through the 360deg spin. SVG coords map (sx,sy) -> (sx,-sy)
+   (SVG y-down -> 3D y-up). Returns { geometry, maxDist } (same shape as the iPhone). */
+function morph3BuildIconGeometry(){
+  const DEPTH = 14;            // frame extrusion depth (deep box frame)
+  const ZMID  = DEPTH / 2;     // mid-depth: sphere + tube sit here
+  const rrPath = (path, x, y, w, h, r) => {     // rounded-rect outline into a Path/Shape
+    r = Math.min(r, Math.min(w, h) / 2);
+    path.moveTo(x + r, y);
+    path.lineTo(x + w - r, y);
+    path.quadraticCurveTo(x + w, y, x + w, y + r);
+    path.lineTo(x + w, y + h - r);
+    path.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    path.lineTo(x + r, y + h);
+    path.quadraticCurveTo(x, y + h, x, y + h - r);
+    path.lineTo(x, y + r);
+    path.quadraticCurveTo(x, y, x + r, y);
+  };
+  // SVG rect 12,8 w116 h84 rx18, stroke 5 -> a RING. In shape coords (X=sx, Y=-sy)
+  // the SVG y[8..92] becomes Y[-92..-8]; outer = path grown by stroke/2 (2.5), inner shrunk.
+  const outer = new THREE.Shape();
+  rrPath(outer, 9.5, -94.5, 121, 89, 20.5);
+  const hole = new THREE.Path();
+  rrPath(hole, 14.5, -89.5, 111, 79, 15.5);
+  outer.holes.push(hole);
+  const frame = new THREE.ExtrudeGeometry(outer, { depth: DEPTH, bevelEnabled: false, curveSegments: 16 });
+
+  // filled circle cx48 cy50 r9 -> a sphere, centered at mid-depth
+  const dot = new THREE.SphereGeometry(9, 28, 20);
+  dot.translate(48, -50, ZMID);
+
+  // arc M79,56 Q92,38 105,56 stroke 6 -> a raised tube ridge (radius 3), mid-depth
+  const curve = new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(79,  -56, ZMID),
+    new THREE.Vector3(92,  -38, ZMID),
+    new THREE.Vector3(105, -56, ZMID));
+  const ridge = new THREE.TubeGeometry(curve, 40, 3, 14, false);
+
+  const prep = (g) => {       // -> non-indexed, position+normal only (mergeable)
+    let o = new THREE.BufferGeometry();
+    o.setAttribute('position', g.attributes.position.clone());
+    if (g.attributes.normal) o.setAttribute('normal', g.attributes.normal.clone());
+    if (g.index) o.setIndex(g.index.clone());
+    if (o.index) o = o.toNonIndexed();
+    if (!o.attributes.normal) o.computeVertexNormals();
+    return o;
+  };
+  const merged = mergeGeometries([prep(frame), prep(dot), prep(ridge)], false);
+  if (!merged) throw new Error('icon: merge failed');
+  if (!merged.attributes.normal) merged.computeVertexNormals();
+
+  // normalize: center on bbox, scale max-dim -> 1.8 (same convention as glasses/iPhone)
+  const box = new THREE.Box3().setFromBufferAttribute(merged.attributes.position);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const scale = 1.8 / Math.max(size.x, size.y, size.z, 1e-4);
+  merged.translate(-center.x, -center.y, -center.z);
+  merged.scale(scale, scale, scale);
+  merged.computeBoundingBox(); merged.computeBoundingSphere();
+  let maxDist = 0; const p = merged.attributes.position;
+  for (let i = 0; i < p.count; i++){
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const d = Math.sqrt(x*x + y*y + z*z); if (d > maxDist) maxDist = d;
+  }
+  return { geometry: merged, maxDist };
+}
+
+/* build (runs once the Stage-2 iPhone solid exists AND the icon geometry is built) */
+function morph3Build(){
+  try {
+    if (!morph2Iphone || !morph3IconGeo) throw new Error('morph3: source/target not ready');
+    statueGroup.updateMatrixWorld(true);
+
+    // SOURCE: the solid iPhone in its RESTING statueGroup-local pose (ignore the
+    // Stage-2 spin, which is at ~2pi==identity by the time Stage 3 begins). morph2Iphone
+    // is a child of morph2Pivot (at the slot) with local pos 0, quat/scale = the phone pose.
+    const srcGeo = morph2Iphone.geometry;
+    const srcMat4 = new THREE.Matrix4().compose(
+      morph2Pivot.position.clone(), morph2Iphone.quaternion.clone(), morph2Iphone.scale.clone());
+    const srcBox = new THREE.Box3().setFromBufferAttribute(srcGeo.attributes.position);
+    const srcSize = srcBox.getSize(new THREE.Vector3());
+    const srcMaxDist = Math.max(1e-4, srcSize.length() * 0.5);
+    const iHeight = Math.max(1e-4, srcSize.y) * morph2Iphone.scale.y;   // phone height in statueGroup units
+
+    // TARGET: icon placed at the SAME slot (the iPhone center). Match the icon's WIDEST
+    // extent to the phone height so it reads at a comparable on-screen size.
+    const iconBoxL = new THREE.Box3().setFromBufferAttribute(morph3IconGeo.attributes.position);
+    const iconSizeL = iconBoxL.getSize(new THREE.Vector3());
+    const iconScale = (iHeight / Math.max(iconSizeL.x, iconSizeL.y, 1e-4)) * ICON_LOOK.scaleMul;
+    const iconPos = morph2Pivot.position.clone().add(
+      new THREE.Vector3(ICON_LOOK.offX, ICON_LOOK.offY, ICON_LOOK.offZ));
+    const iconQuat = morph2Iphone.quaternion.clone().multiply(
+      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0), THREE.MathUtils.degToRad(ICON_LOOK.yawDeg)));
+    const iconMat4 = new THREE.Matrix4().compose(
+      iconPos, iconQuat, new THREE.Vector3(iconScale, iconScale, iconScale));
+
+    const N = MORPH_COUNT;
+    const rng = sigMulberry32(0x1c0ffee);
+    const tmp = { px:0, py:0, pz:0, nx:0, ny:0, nz:0 };
+
+    const srcSampler = new SigSampler(srcGeo, rng);
+    const srcPts = new Array(N);
+    for (let i = 0; i < N; i++){
+      srcSampler.sample(tmp);
+      srcPts[i] = { lx: tmp.px, ly: tmp.py, lz: tmp.pz, nx: tmp.nx, ny: tmp.ny, nz: tmp.nz,
+        theta: Math.atan2(tmp.px, tmp.pz), seed: rng() };
+    }
+    const dstSampler = new SigSampler(morph3IconGeo, rng);
+    const dstPts = new Array(N);
+    for (let i = 0; i < N; i++){
+      dstSampler.sample(tmp);
+      dstPts[i] = { lx: tmp.px, ly: tmp.py, lz: tmp.pz, theta: Math.atan2(tmp.px, tmp.pz) };
+    }
+    // azimuth-rank + per-window height pairing (identical strategy to the other morphs)
+    srcPts.sort((a,b)=>a.theta-b.theta);
+    dstPts.sort((a,b)=>a.theta-b.theta);
+    const WIN = 80;
+    for (let s = 0; s < N; s += WIN){
+      const e = Math.min(s + WIN, N);
+      const sw = srcPts.slice(s, e).sort((a,b)=>b.ly-a.ly);
+      const dw = dstPts.slice(s, e).sort((a,b)=>b.ly-a.ly);
+      for (let k = 0; k < sw.length; k++){ srcPts[s+k]=sw[k]; dstPts[s+k]=dw[k]; }
+    }
+    // dissolve bias over iphone, reveal bias over icon (same fields the shaders use)
+    const dRaw = new Float32Array(N); let dMin=Infinity, dMax=-Infinity;
+    for (let i=0;i<N;i++){ const s=srcPts[i];
+      const f = sigNoise.fieldGlasses(s.lx, s.ly, s.lz, 0,0,0, srcMaxDist);
+      dRaw[i]=f; if(f<dMin)dMin=f; if(f>dMax)dMax=f; }
+    const srcRemap = { min:dMin, range:Math.max(dMax-dMin,1e-6) };
+    const rRaw = new Float32Array(N); let rMin=Infinity, rMax=-Infinity;
+    for (let i=0;i<N;i++){ const d=dstPts[i];
+      const f = sigNoise.fieldGlasses(d.lx, d.ly, d.lz, 0,0,0, morph3IconMaxDist);
+      rRaw[i]=f; if(f<rMin)rMin=f; if(f>rMax)rMax=f; }
+    const dstRemap = { min:rMin, range:Math.max(rMax-rMin,1e-6) };
+
+    const aHead=new Float32Array(N*3), aHeadN=new Float32Array(N*3), aGlass=new Float32Array(N*3);
+    const aSeed=new Float32Array(N), aD=new Float32Array(N), aR=new Float32Array(N);
+    const sv=new THREE.Vector3(), nv=new THREE.Vector3(), dv=new THREE.Vector3();
+    const normalMat = new THREE.Matrix3().getNormalMatrix(srcMat4);
+    for (let i=0;i<N;i++){
+      const s=srcPts[i], d=dstPts[i];
+      // positions baked RELATIVE to the icon center (the pivot) so the spin is in-place
+      sv.set(s.lx,s.ly,s.lz).applyMatrix4(srcMat4).sub(iconPos);
+      nv.set(s.nx,s.ny,s.nz).applyMatrix3(normalMat).normalize();
+      dv.set(d.lx,d.ly,d.lz).applyMatrix4(iconMat4).sub(iconPos);
+      aHead[i*3]=sv.x; aHead[i*3+1]=sv.y; aHead[i*3+2]=sv.z;          // SOURCE (iphone) rel. to pivot
+      aHeadN[i*3]=nv.x; aHeadN[i*3+1]=nv.y; aHeadN[i*3+2]=nv.z;
+      aGlass[i*3]=dv.x; aGlass[i*3+1]=dv.y; aGlass[i*3+2]=dv.z;        // TARGET (icon) rel. to pivot
+      aSeed[i]=s.seed;
+      aD[i]=Math.min(Math.max(sigRemapBias(dRaw[i], srcRemap),0.02),0.92);
+      aR[i]=Math.min(Math.max(sigRemapBias(rRaw[i], dstRemap),0.02),0.92);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(aHead.slice(),3));
+    geo.setAttribute('aHead', new THREE.BufferAttribute(aHead,3));
+    geo.setAttribute('aHeadN', new THREE.BufferAttribute(aHeadN,3));
+    geo.setAttribute('aGlass', new THREE.BufferAttribute(aGlass,3));
+    geo.setAttribute('aSeed', new THREE.BufferAttribute(aSeed,1));
+    geo.setAttribute('aDBias', new THREE.BufferAttribute(aD,1));
+    geo.setAttribute('aRBias', new THREE.BufferAttribute(aR,1));
+    geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0,0,0), 6.0);
+
+    // pivot AT the icon center: cloud + icon are its children, baked relative to it,
+    // so morph3Pivot.rotation.y spins them IN PLACE (mirror of morph2Pivot).
+    morph3Pivot = new THREE.Group();
+    morph3Pivot.position.copy(iconPos);
+    statueGroup.add(morph3Pivot);
+
+    const mat = new THREE.ShaderMaterial({
+      uniforms: morphU3,
+      vertexShader: MORPH_POINTS_VERT, fragmentShader: MORPH_POINTS_FRAG,
+      transparent:true, depthWrite:false, depthTest:true, blending:THREE.NormalBlending
+    });
+    morph3Points = new THREE.Points(geo, mat);
+    morph3Points.frustumCulled = false;
+    morph3Points.renderOrder = 8;
+    morph3Points.visible = false;
+    morph3Pivot.add(morph3Points);
+
+    // solid BLACK icon, revealed by the same field-discard seam as the prior
+    // morphs so the iPhone particles visibly reassemble into the SVG model.
+    const iconMat = new THREE.MeshPhysicalMaterial({
+      color: 0x0a0a0a, roughness: 0.4, metalness: 0.2, clearcoat: 0.5,
+      clearcoatRoughness: 0.3, envMapIntensity: 0.7, side: THREE.DoubleSide
+    });
+    morphPatchGlassesMaterial(iconMat, morph3IconMaxDist, dstRemap, morphU3.uReveal);
+    const iconMesh = new THREE.Mesh(morph3IconGeo, iconMat);
+    iconMesh.frustumCulled = false;
+    iconMesh.renderOrder = 9;
+    iconMesh.position.set(0, 0, 0);          // pivot already sits at iconPos
+    iconMesh.quaternion.copy(iconQuat);
+    iconMesh.scale.setScalar(iconScale);
+    iconMesh.visible = false;
+    morph3Pivot.add(iconMesh);
+    morph3Icon = iconMesh;
+
+    MORPH3.ready = true;
+    requestScrollSceneUpdate();
+  } catch (e){
+    console.warn('morph3: build failed', e);
+    MORPH3.failed = true;
+  }
+}
+
+/* same curve as the other morphs, driving morphU3 + the stage-3 spin */
+function morph3EvalTimeline(m){
+  m = clamp01(m);
+  MORPH3.m = m;
+  MORPH3.yaw = smoothstep(0, 1, m) * Math.PI * 2.0;     // full turn, eased ends
+  morphU3.uDissolve.value = clamp01((m - 0.06) / 0.44);
+  morphU3.uErode.value    = clamp01((m - 0.075) / 0.44);
+  morphU3.uMorph.value    = smoothstep(0.30, 0.82, m);
+  morphU3.uScatter.value  = Math.sin(Math.PI * m);
+  morphU3.uReveal.value   = clamp01((m - 0.60) / 0.40);
+}
+
+function morph3Update(t){
+  if (!MORPH3.ready) return;
+  morphU3.uTime.value = t;
+  const m = MORPH3.m;
+  if (morph3Pivot) morph3Pivot.rotation.y = MORPH3.yaw;   // 360deg spin about the icon's OWN centre
+
+  if (morph3Points) morph3Points.visible = m > 0.001 && m < 0.999;
+  if (morph3Icon){
+    morph3Icon.visible = morphU3.uReveal.value > 0.002;
+  }
+}
+
+function morph3Kickoff(){
+  if (MORPH3.kicked || MORPH3.failed) return;
+  MORPH3.kicked = true;
+  try {
+    const icon = morph3BuildIconGeometry();   // procedural, synchronous (no fetch)
+    morph3IconGeo = icon.geometry;
+    morph3IconMaxDist = icon.maxDist;
+  } catch (e){ console.warn('morph3: icon geometry build failed', e); MORPH3.failed = true; return; }
+  // build only once the Stage-2 iPhone solid exists
+  const tryBuild = () => {
+    if (MORPH2.ready && morph2Iphone) morph3Build();
+    else if (!MORPH2.failed && !MORPH.failed) setTimeout(tryBuild, 120);
+  };
+  tryBuild();
+}
+
+/* verification / live-tuning hook */
+window.__MORPH3 = {
+  U: morphU3, state: MORPH3, look: ICON_LOOK,
+  park(m){ morph3EvalTimeline(typeof m === 'number' ? m : MORPH3.m); requestScrollSceneUpdate(); },
+  rebuild(){   // re-run build after tweaking ICON_LOOK (tuning aid)
+    if (morph3Pivot){ statueGroup.remove(morph3Pivot); morph3Pivot = null; }
+    morph3Points = null; morph3Icon = null;
+    MORPH3.ready = false;
+    if (morph3IconGeo && morph2Iphone) morph3Build();
+    requestScrollSceneUpdate();
+  },
+  get points(){ return morph3Points; },
+  get icon(){ return morph3Icon; },
+  // screen-space bbox (px) of the icon or the iPhone source — render-verify aid.
+  screenBBox(which){
+    const o = which === 'iphone' ? morph2Iphone : morph3Icon;
+    if (!o || !o.geometry) return null;
+    o.updateWorldMatrix(true, false);
+    o.geometry.computeBoundingBox();
+    const bb = o.geometry.boundingBox, v = new THREE.Vector3();
+    let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+    for (let i=0;i<8;i++){
+      v.set(i&1?bb.max.x:bb.min.x, i&2?bb.max.y:bb.min.y, i&4?bb.max.z:bb.min.z);
+      o.localToWorld(v); v.project(camera);
+      const sx=(v.x*0.5+0.5)*window.innerWidth, sy=(1-(v.y*0.5+0.5))*window.innerHeight;
+      minx=Math.min(minx,sx);maxx=Math.max(maxx,sx);miny=Math.min(miny,sy);maxy=Math.max(maxy,sy);
+    }
+    return {cx:Math.round((minx+maxx)/2),cy:Math.round((miny+maxy)/2),w:Math.round(maxx-minx),h:Math.round(maxy-miny),minx:Math.round(minx),maxx:Math.round(maxx),vw:window.innerWidth};
+  }
+};
+
+/* ===================== Plate ripple overlay (one-time image switch) =====================
+   A gl-transitions "ripple" (gre) on a dedicated WebGL canvas over the plate. It plays
+   ONCE, during compose, as the centered hero artwork (Textured Surface) docks right and
+   the glasses dock left: the image full-image-ripples and switches to the gallery's first
+   artwork (Acrylic Field). Then the overlay fades out, handing off to the DOM filmstrip
+   (showing the same artwork) for the rest of the gallery. Self-contained; the gallery is
+   untouched. */
+let plateRippleReady = false, plateRippleRenderer = null, plateRippleScene = null,
+    plateRippleCam = null, plateRippleU = null, plateRippleCanvas = null;
+const PLATE_RIPPLE_VERT = `
+varying vec2 vUv;
+void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+const PLATE_RIPPLE_FRAG = `
+precision highp float;
+uniform sampler2D uTexA, uTexB;
+uniform vec4 uUVA, uUVB;             // object-fit cover: xy=scale, zw=offset
+uniform float uProgress, uAmplitude, uSpeed;
+varying vec2 vUv;
+vec3 grade(vec3 c){                   // match the CSS filter: grayscale(1) contrast(1.08) brightness(1.02)
+  float g = dot(c, vec3(0.2126, 0.7152, 0.0722));
+  vec3 v = (vec3(g) - 0.5) * 1.08 + 0.5;
+  return clamp(v * 1.02, 0.0, 1.0);
+}
+vec4 sA(vec2 uv){ return texture2D(uTexA, uv * uUVA.xy + uUVA.zw); }
+vec4 sB(vec2 uv){ return texture2D(uTexB, uv * uUVB.xy + uUVB.zw); }
+void main(){
+  vec2 uv = vUv;
+  vec2 dir = uv - 0.5;
+  float dist = length(dir);
+  // Full-image ripple. The wave amplitude peaks MID-transition and returns to 0 at
+  // both ends (sin(pi*progress)) so it lands perfectly clean (no wobble at the handoff
+  // to the DOM filmstrip). Both images are displaced, so the incoming artwork visibly
+  // ripples in (the outgoing near-white hero image alone wouldn't show the wave).
+  float amp = sin(3.14159265 * uProgress);
+  vec2 offset = dir * (sin(uProgress * dist * uAmplitude - uProgress * uSpeed) + 0.5) / 22.0 * amp;
+  vec4 col = mix(sA(uv + offset), sB(uv + offset), smoothstep(0.18, 1.0, uProgress));
+  gl_FragColor = vec4(grade(col.rgb), 1.0);
+}`;
+function plateCoverUV(tex, cw, ch, target){      // mimic object-fit:cover, object-position 50% 48%
+  if (!tex || !tex.image || !tex.image.width){ target.set(1, 1, 0, 0); return; }
+  const ia = tex.image.width / tex.image.height, ca = cw / Math.max(1, ch);
+  let sx = 1, sy = 1;
+  if (ia > ca) sx = ca / ia; else sy = ia / ca;
+  target.set(sx, sy, (1 - sx) * 0.5, (1 - sy) * 0.52);
+}
+function initPlateRipple(){
+  plateRippleCanvas = document.getElementById('plate-ripple-canvas');
+  if (!plateRippleCanvas) return;
+  try {
+    plateRippleRenderer = new THREE.WebGLRenderer({ canvas: plateRippleCanvas, alpha: true, antialias: true });
+    plateRippleRenderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
+    plateRippleRenderer.outputColorSpace = THREE.LinearSRGBColorSpace;   // display the JPEG bytes as-is
+    plateRippleScene = new THREE.Scene();
+    plateRippleCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    plateRippleU = {
+      uTexA: { value: null }, uTexB: { value: null },
+      uUVA: { value: new THREE.Vector4(1, 1, 0, 0) }, uUVB: { value: new THREE.Vector4(1, 1, 0, 0) },
+      uProgress: { value: 0 }, uAmplitude: { value: 78.0 }, uSpeed: { value: 48.0 }
+    };
+    const mat = new THREE.ShaderMaterial({
+      uniforms: plateRippleU, vertexShader: PLATE_RIPPLE_VERT, fragmentShader: PLATE_RIPPLE_FRAG, depthTest: false, depthWrite: false
+    });
+    plateRippleScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
+    const loader = new THREE.TextureLoader();
+    const load = (src, key) => loader.load(src, (tex) => {
+      tex.colorSpace = THREE.NoColorSpace;
+      tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+      tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+      plateRippleU[key].value = tex; requestScrollSceneUpdate();
+    });
+    load('vertical-grey-scale-shot-textured-black-white-surface.jpg', 'uTexA');  // FROM: hero artwork
+    load('black-white-acrylic-painting.jpg', 'uTexB');                          // TO: gallery artwork 1
+    window.__plateRipple.U = plateRippleU;   // live-tune amplitude/speed during verify
+    plateRippleReady = true;
+  } catch (e){ console.warn('plate ripple init failed', e); plateRippleReady = false; }
+}
+function renderPlateRipple(){
+  if (!plateRippleReady) return;
+  if (plateRippleState.show <= 0.001){ if (plateRippleCanvas) plateRippleCanvas.style.opacity = '0'; return; }
+  if (!plateRippleU.uTexA.value || !plateRippleU.uTexB.value) return;
+  const win = plateWindow || plateRippleCanvas.parentElement;
+  const cw = Math.max(1, win.clientWidth), ch = Math.max(1, win.clientHeight);
+  if (cw !== plateRippleSize.w || ch !== plateRippleSize.h){
+    plateRippleSize.w = cw; plateRippleSize.h = ch;
+    plateRippleRenderer.setSize(cw, ch, false);
+  }
+  plateCoverUV(plateRippleU.uTexA.value, cw, ch, plateRippleU.uUVA.value);
+  plateCoverUV(plateRippleU.uTexB.value, cw, ch, plateRippleU.uUVB.value);
+  plateRippleU.uProgress.value = plateRippleState.progress;
+  plateRippleCanvas.style.opacity = plateRippleState.show.toFixed(3);
+  plateRippleRenderer.render(plateRippleScene, plateRippleCam);
+}
+initPlateRipple();
+
 function tick(){
   const dt = Math.min(0.05, clock.getDelta());
   const t = clock.elapsedTime;
@@ -8443,14 +10371,16 @@ function tick(){
     const idleRise = STATUE_IDLE_SWAY ? Math.sin(t * 0.55) * 0.018 * Math.max(0.25, reveal.progress) : 0;
     const scrollMove = scrollSculpture.progress;
     const layoutMove = scrollSculpture.layoutProgress;
-    const layoutShift = (window.innerWidth < 720 ? -1.16 : -2.72) * layoutMove;
-    const layoutDrop = (window.innerWidth < 720 ? -0.18 : -0.32) * layoutMove;
-    const layoutScale = 1 - layoutMove * (window.innerWidth < 720 ? 0.12 : 0.18);
+    const mob = window.innerWidth < 720;
+    const layoutShift = (mob ? STATUE_LAYOUT.shiftMobile : STATUE_LAYOUT.shiftDesktop) * layoutMove;
+    const layoutDrop = (mob ? STATUE_LAYOUT.dropMobile : STATUE_LAYOUT.dropDesktop) * layoutMove;
+    const layoutScale = 1 - layoutMove * (mob ? STATUE_LAYOUT.scaleMobile : STATUE_LAYOUT.scaleDesktop);
     const scrollYaw = scrollMove * THREE.MathUtils.degToRad(50);
     const scrollPitch = scrollMove * THREE.MathUtils.degToRad(2.2);
     const scrollScale = 1 + scrollMove * 0.14;
+    const layoutYaw = THREE.MathUtils.degToRad(mob ? STATUE_LAYOUT.turnBackDegMobile : STATUE_LAYOUT.turnBackDeg) * layoutMove;
 
-    statueGroup.rotation.y = current.rotY + scrollYaw + (STATUE_IDLE_SWAY ? Math.sin(t * 0.22) * 0.06 : 0);
+    statueGroup.rotation.y = current.rotY + scrollYaw + layoutYaw + MORPH.yaw + (STATUE_IDLE_SWAY ? Math.sin(t * 0.22) * 0.06 : 0);
     statueGroup.rotation.x = current.rotX + scrollPitch + (STATUE_IDLE_SWAY ? Math.sin(t * 0.17) * 0.012 : 0);
     statueGroup.position.x = baseX + layoutShift;
     statueGroup.position.y = baseY + revealRise + idleRise + layoutDrop;
@@ -8463,7 +10393,40 @@ function tick(){
     shadowDisc.scale.setScalar(0.58 + reveal.progress * 0.04);
   }
 
-  // Camera parallax — counter-direction to the statue tilt
+  // Spin-to-glasses morph: refresh time + the (spin-stripped) head-field matrix.
+  morphUpdate(t);
+  morph2Update(t);
+  morph3Update(t);   // AFTER morph2Update so the iPhone stage-3 erode uniform wins
+
+  // Glasses: spring-drop onto David's nose. The model rides the head's live
+  // world transform plus a head-local nose offset; an under-damped spring
+  // drives the vertical drop with one tiny overshoot (the "settle" bounce).
+  if (glassesGroup && glassesState.ready && statueGroup){
+    const target = glassesState.on ? 0 : GLASSES_LOOK.dropLift;
+    // semi-implicit (symplectic) Euler — stable; dt is capped at 0.05 above.
+    const accel = -GLASSES_LOOK.springK * (glassesState.drop - target) - GLASSES_LOOK.springC * glassesState.vel;
+    glassesState.vel += accel * dt;
+    glassesState.drop += glassesState.vel * dt;
+
+    const q = statueGroup.quaternion;
+    const s = statueGroup.scale.x;  // uniform scale
+    _glNose.set(GLASSES_LOOK.noseX, GLASSES_LOOK.noseY, GLASSES_LOOK.noseZ).applyQuaternion(q).multiplyScalar(s);
+    _glUp.set(0, 1, 0).applyQuaternion(q);  // head-up axis, for the drop offset
+    glassesGroup.position.copy(statueGroup.position).add(_glNose).addScaledVector(_glUp, glassesState.drop * s);
+    // Pure world-space horizontal shift (screen-left/right) — NOT rotated by the
+    // head, so it translates the glasses without changing their angle/perspective.
+    glassesGroup.position.x += GLASSES_LOOK.screenX;
+    _glEuler.set(GLASSES_LOOK.pitchFine, GLASSES_LOOK.yawFine, 0);
+    _glFine.setFromEuler(_glEuler);
+    glassesGroup.quaternion.copy(q).multiply(_glFine);
+    const targetW = window.innerWidth < 720 ? GLASSES_LOOK.widthMobile : GLASSES_LOOK.widthDesktop;
+    glassesGroup.scale.setScalar((targetW / glassesState.modelWidth) * s);
+    // Hidden until the trigger fires (and through the spring-up on reverse), so
+    // the glasses are never seen floating above David during the hero section.
+    glassesGroup.visible = glassesState.on || glassesState.drop < GLASSES_LOOK.dropLift - 0.02;
+  }
+
+  // Camera parallax — counter-direction to the statue tilt.
   camera.position.x = current.camX;
   camera.position.y = 1.55 + current.camY * 0.4;
   camera.position.z = cameraBaseZ + (1 - poseProgress) * 0.5;
@@ -8492,6 +10455,7 @@ function tick(){
   }
 
   renderer.render(scene, camera);
+  renderPlateRipple();
   requestAnimationFrame(tick);
 }
 tick();
@@ -8526,6 +10490,10 @@ function resize(){
 }
 window.addEventListener('resize', resize);
 resize();
+
+/* The "Signal journey" (statue -> ink wires -> glasses particle port) was
+   removed. The sculpture now stays put and slides left while the image
+   plate slides right (driven by compositionProgress in updateScrollScene). */
 
 /* ──────────────────────────────────────────────────────────────────────────
    Plaster backdrop — neutral procedural plaster only.

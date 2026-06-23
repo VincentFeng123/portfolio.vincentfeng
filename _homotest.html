@@ -1,0 +1,47 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;background:#efece6;font-family:system-ui}
+.cell{display:inline-block;position:relative;}
+svg{display:block;width:520px;height:760px;}
+.sil{fill:rgba(0,0,0,0.10);stroke:rgba(0,0,0,0.35);stroke-width:1.5;}
+.trace{fill:none;stroke:#111;stroke-width:2;stroke-dasharray:7 6;stroke-linecap:round;}
+h3{margin:6px 10px;font-size:14px;color:#333}
+</style></head><body>
+<div class="cell"><h3>silhouette (grey) + offset trace (dashed) — homothety</h3>
+<svg viewBox="0 0 650 950" preserveAspectRatio="xMidYMid meet" id="svg"></svg></div>
+<script>
+// representative David-bust silhouette: head (upper), long neck, shoulders, base cut at bottom
+const BUST=[
+ {x:325,y:40},{x:430,y:70},{x:505,y:150},{x:540,y:280},{x:535,y:400},{x:495,y:470},
+ {x:455,y:520},{x:430,y:560},{x:412,y:600},{x:405,y:660},{x:402,y:720},
+ {x:520,y:735},{x:600,y:770},{x:612,y:870},{x:612,y:950},
+ {x:38,y:950},{x:38,y:870},{x:50,y:770},{x:130,y:735},{x:248,y:720},
+ {x:245,y:660},{x:238,y:600},{x:220,y:560},{x:195,y:520},{x:155,y:470},
+ {x:115,y:400},{x:110,y:280},{x:145,y:150},{x:220,y:70}
+];
+const getLoaderOutlineGap=()=>18;
+function createOffsetLoaderContour(points){
+  if(!points||points.length<3)return points||[];
+  const gap=getLoaderOutlineGap();
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  for(const p of points){if(p.x<minX)minX=p.x;if(p.x>maxX)maxX=p.x;if(p.y<minY)minY=p.y;if(p.y>maxY)maxY=p.y;}
+  const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+  let avgDist=0;for(const p of points)avgDist+=Math.hypot(p.x-cx,p.y-cy);
+  avgDist=Math.max(1,avgDist/points.length);
+  const scale=1+gap/avgDist;
+  return points.map(p=>({x:cx+(p.x-cx)*scale,y:cy+(p.y-cy)*scale}));
+}
+function pathFromClosedPoints(points){
+  if(!points||points.length<3)return '';
+  const c=[`M${points[0].x.toFixed(2)} ${points[0].y.toFixed(2)}`];const t=0.82;
+  for(let i=0;i<points.length;i++){
+    const p0=points[(i-1+points.length)%points.length],p1=points[i],p2=points[(i+1)%points.length],p3=points[(i+2)%points.length];
+    const c1x=p1.x+((p2.x-p0.x)/6)*t,c1y=p1.y+((p2.y-p0.y)/6)*t;
+    const c2x=p2.x-((p3.x-p1.x)/6)*t,c2y=p2.y-((p3.y-p1.y)/6)*t;
+    c.push(`C${c1x.toFixed(2)} ${c1y.toFixed(2)} ${c2x.toFixed(2)} ${c2y.toFixed(2)} ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}`);
+  }
+  c.push('Z');return c.join(' ');
+}
+const ns="http://www.w3.org/2000/svg",svg=document.getElementById('svg');
+const sil=document.createElementNS(ns,'path');sil.setAttribute('class','sil');sil.setAttribute('d',pathFromClosedPoints(BUST));svg.appendChild(sil);
+const tr=document.createElementNS(ns,'path');tr.setAttribute('class','trace');tr.setAttribute('d',pathFromClosedPoints(createOffsetLoaderContour(BUST)));svg.appendChild(tr);
+</script></body></html>

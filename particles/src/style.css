@@ -1,0 +1,87 @@
+:root {
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+#gl {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+}
+
+#scroll-track {
+  height: 650vh;
+  pointer-events: none;
+}
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.label {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.label-title {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.label-caption {
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.label-end {
+  left: 50%;
+  bottom: 18vh;
+  transform: translateX(-50%);
+  text-align: center;
+}
+
+#progress {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 40vh;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#progress-fill {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.7);
+  transform: scaleY(0);
+  transform-origin: center top;
+}
+
+#progress .tick {
+  position: absolute;
+  left: -1px;
+  width: 3px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+#progress .tick.passed {
+  background: rgba(255, 255, 255, 0.6);
+}
