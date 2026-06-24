@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vincent Feng — Atelier</title>
+<title>Vincent Feng — Portfolio</title>
 <link rel="icon" href="data:,">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1721,7 +1721,7 @@
 <body class="is-loading">
 
 <!-- ░░░ Loader ░░░ -->
-<div class="loader" id="loader" role="status" aria-live="polite" aria-label="Loading plaster background">
+<div class="loader" id="loader" role="status" aria-live="polite" aria-label="Loading">
   <svg class="loader__drawing" id="loader-drawing-svg" viewBox="0 0 100 150" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
     <defs>
       <filter id="loader-sketch-filter" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
@@ -1798,7 +1798,7 @@
 
 <!-- ░░░ Image plate (BEHIND statue, above name) ░░░ -->
 <div class="statue-backing" id="statue-backing">
-  <div class="plate-window" id="plate-window" role="button" tabindex="-1" aria-label="View more for Textured Surface Study" aria-disabled="true">
+  <div class="plate-window" id="plate-window" role="button" tabindex="-1" aria-label="View more for ArtLens" aria-disabled="true">
     <div class="plate-filmstrip" id="plate-filmstrip">
       <div class="plate-card"><img src="black-white-acrylic-painting.jpg" alt=""></div>
       <div class="plate-card"><img src="rm167batch2-sasi-51.jpg" alt=""></div>
@@ -1815,14 +1815,14 @@
   </div>
   <div class="plate-title" id="plate-title">
     <span class="plate-title__index" id="plate-title-index">01</span>
-    <span class="plate-title__name" id="plate-title-name">Acrylic Field</span>
-    <a class="plate-view-more" id="plate-view-more" href="#artwork/acrylic-field">View More</a>
+    <span class="plate-title__name" id="plate-title-name">ArtLens</span>
+    <a class="plate-view-more" id="plate-view-more" href="#artwork/artlens">View More</a>
   </div>
 </div>
 
 <!-- ░░░ Artwork detail page ░░░ -->
-<section class="artwork-detail" id="artwork-detail" aria-hidden="true" aria-label="Artwork more information">
-  <button class="artwork-detail__back" id="artwork-detail-back" type="button" aria-label="Back to artworks">
+<section class="artwork-detail" id="artwork-detail" aria-hidden="true" aria-label="Project details">
+  <button class="artwork-detail__back" id="artwork-detail-back" type="button" aria-label="Back to projects">
     <svg viewBox="0 0 18 18" aria-hidden="true">
       <path d="M11.4 4.1 6.5 9l4.9 4.9" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.4"/>
       <path d="M7 9h7.2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.4"/>
@@ -1831,11 +1831,10 @@
   </button>
   <div class="artwork-detail__viewport" id="artwork-detail-scroll" data-lenis-prevent tabindex="-1">
     <article class="artwork-detail__article">
-      <p class="artwork-detail__eyebrow" id="artwork-detail-eyebrow">AP Art Portfolio / 01</p>
-      <h1 class="artwork-detail__title" id="artwork-detail-title">Textured Surface
-Study</h1>
+      <p class="artwork-detail__eyebrow" id="artwork-detail-eyebrow">Portfolio / 01</p>
+      <h1 class="artwork-detail__title" id="artwork-detail-title">ArtLens</h1>
       <figure class="artwork-detail__media" id="artwork-detail-media">
-        <img id="artwork-detail-image" src="vertical-grey-scale-shot-textured-black-white-surface.jpg" alt="Textured Surface Study">
+        <img id="artwork-detail-image" src="black-white-acrylic-painting.jpg" alt="ArtLens — AI art interpretation app">
       </figure>
       <div class="artwork-detail__copy" id="artwork-detail-copy"></div>
     </article>
@@ -1894,16 +1893,16 @@ Study</h1>
 </section>
 
 <!-- ░░░ Artist info (final scroll reveal) ░░░ -->
-<section class="artist-info" id="artist-info" aria-label="Artist information">
+<section class="artist-info" id="artist-info" aria-label="Maker information">
   <div class="artist-info__rail artist-info__item">
-    <span>Artist</span>
+    <span>Maker</span>
     <span>Contact</span>
   </div>
   <div class="artist-info__body">
-    <p class="artist-info__eyebrow artist-info__item">AP Art Portfolio / 2026</p>
+    <p class="artist-info__eyebrow artist-info__item">Portfolio / 2026</p>
     <h2 class="artist-info__item">Vincent Feng</h2>
     <p class="artist-info__bio artist-info__item">
-      A mixed-media artist exploring how artificial intelligence reshapes identity, memory, and the traces people leave behind. The work combines plaster, fractured imagery, and digital systems to make technology feel physical, intimate, and human.
+      A maker exploring how AI reshapes the way we see and understand visual media — building tools that turn images, video, and screens into meaningful, accessible knowledge.
     </p>
     <div class="artist-info__contacts artist-info__item" aria-label="Email addresses">
       <a href="mailto:studio@vincentfeng.art">studio@vincentfeng.art</a>
@@ -2491,54 +2490,54 @@ function setLoaderCount(value){
 }
 let loaderOutlineLength = 100;
 let loaderSketchDashCycle = 100;
-/* Order = display order in the gallery filmstrip. The hero plate shows Textured
-   Surface; during compose a one-time ripple switches it to the FIRST gallery
-   artwork (Acrylic Field), so the gallery starts there and cycles all 3
-   (Acrylic -> Sasi -> Textured), one per model (glasses / iPhone / icon). */
+/* Order = display order in the gallery filmstrip. The hero plate shows the
+   ScreenieAI image; during compose a one-time ripple switches it to the FIRST
+   gallery project (ArtLens), so the gallery starts there and cycles all 3
+   (ArtLens -> ReelAI -> ScreenieAI), one per model (glasses / iPhone / icon). */
 const artworks = [
   {
-    slug: 'acrylic-field',
-    title: 'Acrylic Field',
+    slug: 'artlens',
+    title: 'ArtLens',
     image: 'black-white-acrylic-painting.jpg',
-    alt: 'Black and white acrylic field',
+    alt: 'ArtLens — AI art interpretation app',
     description: [
-      'This placeholder statement will frame the work as a field of gesture and interruption. The description can later explain the relationship between hand-made marks and artificial systems.',
-      'Future copy can identify the materials, dimensions, source experiments, and intended emotional tone.'
+      'ArtLens is an AI-powered art interpretation app. Point your phone at a painting, sculpture, mural, or sketch — or upload an image — and it explains the work’s style, meaning, history, symbols, color, composition, and technique in clear, plain language.',
+      'It’s built for students, museum visitors, artists, and anyone who has stood in front of a piece and wished for a faster, easier way in.'
     ],
     process: [
-      'Layer broad acrylic movement with sharper interruptions to create a field that resists a single focal point.',
-      'Photograph and crop sections until the image carries both gesture and restraint.',
-      'Balance the final tonal range so it sits cleanly within the portfolio environment.'
+      'Problem — understanding art can feel slow, intimidating, and locked behind expertise.',
+      'Approach — a phone camera feeds a vision-AI pipeline that reads the image and interprets it.',
+      'Result — instant, plain-language insight into any artwork, anywhere.'
     ]
   },
   {
-    slug: 'sasi-relief',
-    title: 'Sasi Relief',
+    slug: 'reelai',
+    title: 'ReelAI',
     image: 'rm167batch2-sasi-51.jpg',
-    alt: 'Color field relief study',
+    alt: 'ReelAI — AI video discovery and clipping tool',
     description: [
-      'This placeholder statement will describe the relief as an experiment in color, repetition, and personal indexing. It can later connect the work to memory systems and childhood visual language.',
-      'The final description can add details about construction, reference imagery, and how the piece changed during critique.'
+      'ReelAI is an AI video discovery and clipping tool for long YouTube videos. It reads transcripts, metadata, and timestamps, then uses AI to surface the most useful and interesting moments — and turns them into clean, well-cut clips.',
+      'Instead of scrubbing through an entire lecture, podcast, or interview, you get the parts that matter, with start and end points chosen for you.'
     ],
     process: [
-      'Start with repeated color units and map how they cluster, drift, and compete for attention.',
-      'Test digital and physical variations to find a rhythm that feels organized without becoming mechanical.',
-      'Edit the final presentation to keep the color active while preserving the portfolio\'s quiet gallery tone.'
+      'Problem — the best moments stay buried inside hours of long-form video.',
+      'Approach — AI analyzes transcripts, metadata, and timestamps to rank what matters.',
+      'Result — timestamped, cleanly-cut clips of the moments worth keeping.'
     ]
   },
   {
-    slug: 'textured-surface-study',
-    title: 'Textured Surface Study',
+    slug: 'screenieai',
+    title: 'ScreenieAI',
     image: 'vertical-grey-scale-shot-textured-black-white-surface.jpg',
-    alt: 'Monochrome textured surface study',
+    alt: 'ScreenieAI — desktop screenshot AI assistant',
     description: [
-      'This placeholder statement will describe how texture becomes a record of pressure, memory, and digital erosion. It will connect the surface to the larger portfolio question around identity and machine-shaped perception.',
-      'The final writing can include material choices, image sources, scale, and the reason the work belongs in the sequence.'
+      'ScreenieAI is a desktop screenshot assistant that lets you ask AI about anything on your screen. Press a hotkey, select a region, and a vision model answers in a floating window.',
+      'Fast, minimal, and always one shortcut away — for reading errors, decoding images, analyzing a page, or solving a visual question without ever switching apps.'
     ],
     process: [
-      'Collect surface references, crop them into close studies, and isolate the marks that feel most physical.',
-      'Build contrast through grayscale editing, then test how the image reads behind the sculptural foreground.',
-      'Refine the final composition so the texture feels quiet from a distance and complex up close.'
+      'Problem — getting help with what’s on screen means copy-pasting and app-switching.',
+      'Approach — a global hotkey captures any region and sends it to a vision model.',
+      'Result — instant answers in a floating window, without leaving your work.'
     ]
   }
 ];
@@ -2549,9 +2548,7 @@ const plateCursorThemes = [
   { color: '#ffffff' },
   { color: '#ffffff' }
 ];
-const artworkTitleLineBreaks = {
-  'textured-surface-study': ['Textured Surface', 'Study']
-};
+const artworkTitleLineBreaks = {};
 const plateImageTransitionStyle = {
   objectPosition: { x: 0.5, y: 0.48 },
   filter: 'grayscale(1) contrast(1.08) brightness(1.02)',
@@ -3792,7 +3789,7 @@ function plateIndexForProgress(progress){
 
 function updatePlateMeta(index){
   const safeIndex = Math.min(plateTitles.length - 1, Math.max(0, index));
-  const title = plateTitles[safeIndex] || 'Artwork';
+  const title = plateTitles[safeIndex] || 'Project';
   const link = artworkHashFor(safeIndex);
   const theme = plateCursorThemes[safeIndex] || plateCursorThemes[0];
 
@@ -3903,7 +3900,7 @@ function setArtworkTransitionDirection(direction = null){
   document.body.classList.toggle('is-artwork-transition-leaving', leaving);
 }
 
-function setPlateInteractivity(enabled, title = plateTitles[activeArtworkIndex()] || 'Artwork'){
+function setPlateInteractivity(enabled, title = plateTitles[activeArtworkIndex()] || 'Project'){
   if (!plateWindow) return;
   const canOpen = !!enabled && !artworkDetailState.open && !artworkDetailState.transitioning;
   plateWindow.tabIndex = canOpen ? 0 : -1;
@@ -3917,7 +3914,7 @@ function setArtworkDetailContent(index){
   if (!artwork) return;
 
   if (artworkDetailEyebrow){
-    artworkDetailEyebrow.textContent = `AP Art Portfolio / ${String(safeIndex + 1).padStart(2, '0')}`;
+    artworkDetailEyebrow.textContent = `Portfolio / ${String(safeIndex + 1).padStart(2, '0')}`;
   }
   if (artworkDetailTitle){
     setArtworkTitleText(artworkDetailTitle, artwork);
@@ -3953,12 +3950,12 @@ const PROCESS_IMAGES = [
   'vertical-grey-scale-shot-textured-black-white-surface.jpg'
 ];
 const PROCESS_CAPTIONS = [
-  'Collect raw references and let the first gestures land without correction.',
-  'Test digital and physical variations until a rhythm starts to emerge.',
-  'Isolate the marks that carry the most physical presence.',
-  'Build contrast and weight so the surface reads from across the room.',
-  'Edit ruthlessly — remove anything that competes with the focus.',
-  'Resolve the final composition and place it in the portfolio sequence.'
+  'Start with a friction worth removing — a small, daily “this should be easier.”',
+  'Sketch the simplest version that could possibly work, and build it fast.',
+  'Wire in the AI — the vision or language model that does the heavy lifting.',
+  'Test against real, messy inputs until the rough edges show themselves.',
+  'Refine relentlessly — cut every step between intent and answer.',
+  'Ship it small, then keep sharpening it in the hands of real people.'
 ];
 const PROCESS_WAVE = { vbw: 3200, vbh: 1000 };
 const PROCESS_NODE_X = [0.10, 0.24, 0.38, 0.52, 0.66, 0.80];
@@ -4748,7 +4745,7 @@ async function closeArtworkDetail(options = {}){
   lenis?.start?.();
   requestScrollSceneUpdate();
   artworkDetailState.transitioning = false;
-  setPlateInteractivity(artworkCursorEnabled, plateTitles[activeArtworkIndex()] || 'Artwork');
+  setPlateInteractivity(artworkCursorEnabled, plateTitles[activeArtworkIndex()] || 'Project');
 
   const focusTarget = artworkDetailState.lastFocus;
   if (focusTarget && document.contains(focusTarget)){
@@ -4991,7 +4988,7 @@ function updatePlateFilmstrip(progress, introProgress = 1, exitProgress = 0){
   }
 
   artworkCursorEnabled = titleAlpha > 0.18 && exitProgress < 0.72 && !artworkDetailState.open && !artworkDetailState.transitioning;
-  setPlateInteractivity(artworkCursorEnabled, plateTitles[currentIndex] || 'Artwork');
+  setPlateInteractivity(artworkCursorEnabled, plateTitles[currentIndex] || 'Project');
   if (latestPointerEvent){
     updateArtworkCursor(latestPointerEvent);
   } else if (!artworkCursorEnabled){
@@ -10248,10 +10245,10 @@ window.__MORPH3 = {
 
 /* ===================== Plate ripple overlay (one-time image switch) =====================
    A gl-transitions "ripple" (gre) on a dedicated WebGL canvas over the plate. It plays
-   ONCE, during compose, as the centered hero artwork (Textured Surface) docks right and
+   ONCE, during compose, as the centered hero image (ScreenieAI) docks right and
    the glasses dock left: the image full-image-ripples and switches to the gallery's first
-   artwork (Acrylic Field). Then the overlay fades out, handing off to the DOM filmstrip
-   (showing the same artwork) for the rest of the gallery. Self-contained; the gallery is
+   project (ArtLens). Then the overlay fades out, handing off to the DOM filmstrip
+   (showing the same image) for the rest of the gallery. Self-contained; the gallery is
    untouched. */
 let plateRippleReady = false, plateRippleRenderer = null, plateRippleScene = null,
     plateRippleCam = null, plateRippleU = null, plateRippleCanvas = null;
