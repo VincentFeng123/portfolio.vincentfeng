@@ -849,6 +849,7 @@
       transform 720ms cubic-bezier(.18,.78,.28,1);
   }
   .artwork-detail__media{
+    position: relative;
     width: min(760px, 66vw);
     aspect-ratio: 12 / 5;
     max-height: min(30vh, 300px);
@@ -869,6 +870,33 @@
     object-position: 50% 50%;
     filter: grayscale(1) contrast(1.05) brightness(1.01);
   }
+  .reelai-thesis{
+    position: absolute; inset: 0; z-index: 1; display: none; box-sizing: border-box;
+    padding: clamp(24px, 4vw, 52px); color: #f5f5f2;
+    flex-direction: column; justify-content: space-between;
+  }
+  .artwork-detail__media.is-reelai-thesis{ background: #080808; }
+  .artwork-detail__media.is-reelai-thesis > img{
+    opacity: 0.27; filter: grayscale(1) contrast(1.16) brightness(0.52);
+    transform: scale(1.025); animation: reelaiThesisDrift 14s ease-in-out infinite alternate;
+  }
+  .artwork-detail__media.is-reelai-thesis .reelai-thesis{ display: flex; }
+  .reelai-thesis__eyebrow{
+    margin: 0; color: rgba(255,255,255,0.52); font: 500 9px/1 var(--sans);
+    letter-spacing: 0.28em; text-transform: uppercase;
+  }
+  .reelai-thesis__statement{
+    max-width: 620px; margin: auto 0; font: 400 clamp(25px, 3.5vw, 48px)/1.02 var(--sans);
+    letter-spacing: -0.045em;
+  }
+  .reelai-thesis__flow{
+    display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center;
+    gap: clamp(8px, 1.4vw, 18px); margin: 0; padding: 0; list-style: none;
+    color: rgba(255,255,255,0.74); font: 500 clamp(9px, 0.9vw, 12px)/1.2 var(--sans);
+    letter-spacing: 0.12em; text-transform: uppercase;
+  }
+  .reelai-thesis__arrow{ color: rgba(255,255,255,0.30); font-size: 15px; }
+  @keyframes reelaiThesisDrift{ from{ transform: scale(1.025) translate3d(-0.4%,0,0); } to{ transform: scale(1.07) translate3d(0.8%,-0.5%,0); } }
   .artwork-detail__copy{
     width: min(920px, 82vw);
     display: grid;
@@ -1036,6 +1064,36 @@
     padding-top: clamp(12px, 2vh, 24px);
     border-top: 1px solid rgba(3,3,3,0.14);
   }
+  .artwork-detail__copy--case{
+    width: min(1080px, 88vw); grid-template-columns: 1fr;
+    gap: clamp(54px, 8vh, 92px);
+  }
+  .reelai-case__triad{
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px; margin-top: clamp(28px, 4vh, 44px);
+    background: rgba(3,3,3,0.14); border: 1px solid rgba(3,3,3,0.14);
+  }
+  .reelai-case__panel{ min-height: 250px; padding: clamp(20px, 2.7vw, 34px); background: #f4f4f2; }
+  .reelai-case__panel span,
+  .reelai-case__decision span,
+  .reelai-architecture__node span{
+    display: block; margin-bottom: clamp(24px, 3vh, 38px); color: var(--ink-faint);
+    font: 500 9px/1 var(--sans); letter-spacing: 0.20em; text-transform: uppercase;
+  }
+  .reelai-case__panel h3{ margin: 0 0 16px; font: 400 clamp(22px, 2vw, 29px)/1.15 var(--serif); }
+  .reelai-case__panel p{ margin: 0; color: var(--ink-dim); font-size: 14px; line-height: 1.62; }
+  .reelai-case__decisions{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin-top: 28px; background: rgba(3,3,3,0.12); }
+  .reelai-case__decision{ min-height: 150px; padding: 24px; background: #f4f4f2; }
+  .reelai-case__decision span{ margin-bottom: 22px; }
+  .reelai-case__decision strong{ display: block; margin-bottom: 8px; font: 520 14px/1.3 var(--sans); }
+  .reelai-case__decision p{ margin: 0; color: var(--ink-dim); font-size: 13px; line-height: 1.55; }
+  .reelai-architecture__intro{ max-width: 650px; margin: 22px 0 34px !important; font: 400 clamp(19px, 1.65vw, 25px)/1.3 var(--serif) !important; color: var(--ink) !important; }
+  .reelai-architecture__flow{ display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
+  .reelai-architecture__node{ position: relative; min-height: 190px; padding: 20px 24px 20px 0; border-top: 1px solid rgba(3,3,3,0.16); }
+  .reelai-architecture__node:not(:last-child)::after{ content: '→'; position: absolute; right: 12px; top: 18px; color: var(--ink-faint); }
+  .reelai-architecture__node span{ margin-bottom: 48px; }
+  .reelai-architecture__node strong{ display: block; margin-bottom: 10px; font: 520 13px/1.3 var(--sans); }
+  .reelai-architecture__node p{ margin: 0; color: var(--ink-dim); font-size: 12px; line-height: 1.5; }
   .artwork-detail__meta{
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1183,29 +1241,30 @@
   }
   .artwork-detail__impact--adopted{
     grid-column: 1 / -1;
-    min-height: 152px;
+    min-height: 168px;
     display: grid;
-    grid-template-columns: minmax(190px, 0.58fr) minmax(260px, 1fr);
-    align-items: end;
-    gap: clamp(24px, 5vw, 72px);
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: clamp(28px, 5vw, 72px);
+    padding: clamp(54px, 6vw, 68px) clamp(28px, 4vw, 52px) clamp(26px, 3vw, 38px);
     background:
-      radial-gradient(circle at 18% 18%, rgba(255,255,255,0.12), transparent 28%),
-      linear-gradient(135deg, #101010, #252525 58%, #0d0d0d);
+      radial-gradient(circle at 88% 18%, rgba(151,190,156,0.16), transparent 30%),
+      linear-gradient(135deg, #101311, #1e2420 58%, #0d100e);
     color: #fff;
   }
   .artwork-detail__impact--adopted::before{
-    content: '';
+    content: 'Deployment outcome / 2026';
     position: absolute;
-    inset: 18px;
-    border: 1px solid rgba(255,255,255,0.12);
+    left: clamp(28px, 4vw, 52px); top: 25px;
+    color: rgba(255,255,255,0.48); font: 500 9px/1 var(--sans);
+    letter-spacing: 0.22em; text-transform: uppercase;
     pointer-events: none;
   }
   .artwork-detail__impact--adopted::after{
-    left: clamp(190px, 25vw, 340px);
-    right: 28px;
-    bottom: 34px;
-    width: auto;
-    background: rgba(255,255,255,0.2);
+    content: '✓'; position: relative; left: auto; right: auto; bottom: auto;
+    display: grid; place-items: center; width: 48px; height: 48px;
+    border: 1px solid rgba(255,255,255,0.28); border-radius: 50%;
+    color: rgba(255,255,255,0.88); background: rgba(255,255,255,0.05);
     transform: none;
   }
   .artwork-detail__impact--adopted strong{
@@ -1214,10 +1273,10 @@
     font-weight: 300;
   }
   .artwork-detail__impact--adopted span{
-    max-width: 420px;
+    max-width: none; white-space: nowrap;
     color: rgba(255,255,255,0.66);
-    font-size: 11px;
-    letter-spacing: 0.18em;
+    font-size: clamp(9px, 0.9vw, 11px);
+    letter-spacing: 0.15em;
   }
   .artwork-detail__case-study-figure{
     margin: clamp(32px, 6vh, 72px) 0 0;
@@ -1296,7 +1355,8 @@
     overflow: hidden;
     background: rgba(255,255,255,0.94);
   }
-  .artwork-detail__iteration figure img{
+  .artwork-detail__iteration figure img,
+  .artwork-detail__iteration figure video{
     width: 100%;
     height: 100%;
     min-height: 190px;
@@ -1504,6 +1564,9 @@
     }
     .artwork-detail__title{ width: min(540px, 88vw); }
     .artwork-detail__media{ width: min(520px, 86vw); }
+    .reelai-thesis{ padding: 22px; }
+    .reelai-thesis__statement{ font-size: clamp(23px, 7vw, 32px); }
+    .reelai-thesis__flow{ letter-spacing: 0.07em; }
     .artwork-detail__copy{ width: min(540px, 88vw); }
     .artwork-detail__copy{
       grid-template-columns: 1fr;
@@ -1512,6 +1575,14 @@
     .artwork-detail__copy--atlas{
       gap: 54px;
     }
+    .artwork-detail__copy--case{ width: 88vw; gap: 54px; }
+    .reelai-case__triad,
+    .reelai-case__decisions{ grid-template-columns: 1fr; }
+    .reelai-case__panel{ min-height: 0; }
+    .reelai-architecture__flow{ grid-template-columns: 1fr; }
+    .reelai-architecture__node{ min-height: 0; padding: 18px 0 28px 28px; }
+    .reelai-architecture__node span{ margin-bottom: 18px; }
+    .reelai-architecture__node:not(:last-child)::after{ content: '↓'; left: 0; right: auto; top: 18px; }
     .artwork-detail__overview,
     .artwork-detail__system-head{
       grid-template-columns: 1fr;
@@ -1571,19 +1642,19 @@
     .artwork-detail__impact--adopted{
       grid-column: 1 / -1;
       min-height: 138px;
-      grid-template-columns: 1fr;
-      align-items: start;
-      gap: 18px;
-      padding: 20px;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 12px 18px;
+      padding: 52px 20px 22px;
     }
     .artwork-detail__impact--adopted::before{
-      inset: 12px;
+      left: 20px; top: 20px;
     }
     .artwork-detail__impact--adopted::after{
-      left: 20px;
-      right: 20px;
-      bottom: 22px;
+      grid-column: 2; grid-row: 1 / span 2; width: 40px; height: 40px;
     }
+    .artwork-detail__impact--adopted strong{ grid-column: 1; }
+    .artwork-detail__impact--adopted span{ grid-column: 1; font-size: 8px; letter-spacing: 0.07em; }
     .artwork-detail__future{
       min-height: 0;
       padding: 24px 18px;
@@ -1616,6 +1687,7 @@
   }
 
   @media (prefers-reduced-motion: reduce){
+    .artwork-detail__media.is-reelai-thesis > img{ animation: none; }
     .process-mode__rail{ height: auto; }
     .process-mode__stage{ position: static; height: auto; min-height: 100vh; }
     .process-mode__track{
@@ -2542,6 +2614,15 @@
       <h1 class="artwork-detail__title" id="artwork-detail-title">Beyond the Canvas</h1>
       <figure class="artwork-detail__media" id="artwork-detail-media">
         <img id="artwork-detail-image" src="images/projects/artlens-glasses-final.jpg" alt="Beyond the Canvas — powered by ArtLens">
+        <div class="reelai-thesis" aria-hidden="true">
+          <p class="reelai-thesis__eyebrow">ReelAI / Product Thesis</p>
+          <p class="reelai-thesis__statement">Turn your own material into a study feed.</p>
+          <ol class="reelai-thesis__flow">
+            <li>Your sources</li><li class="reelai-thesis__arrow" aria-hidden="true">→</li>
+            <li>AI study reels</li><li class="reelai-thesis__arrow" aria-hidden="true">→</li>
+            <li>Community learning</li>
+          </ol>
+        </div>
       </figure>
       <div class="artwork-detail__copy" id="artwork-detail-copy"></div>
     </article>
@@ -3243,6 +3324,15 @@ const artworks = [
       'The experience also adapts to different learners. It supports multiple languages and changes the explanation style for Kids, Teens, and Adults, so the same painting can become playful, age-appropriate, or more historically detailed depending on the viewer.'
     ],
     overviewLead: 'A museum wearable evolved into an adaptive mobile AR learning experience.',
+    productCase: {
+      compact: true,
+      problemFirst: true,
+      framing: [
+        ['01 / Problem', 'Art can remain difficult to read', 'Many museum visitors, including the project author, struggle to understand what they are seeing beyond the surface. Young children can lose attention when the work feels inaccessible, while older visitors and international audiences may be excluded when wall text is difficult to read or unavailable in their language.'],
+        ['02 / Insight', 'Interpretation should adapt to the visitor', 'Engagement grows when explanation matches a visitor\'s language, age, and level of familiarity. The same artwork can invite curiosity through a playful story for a child, a concise guide for a casual visitor, or deeper historical and technical context for an adult learner.'],
+        ['03 / Solution', 'A more inclusive layer for museum looking', 'ArtLens uses multiple languages and age-based content modes to help visitors stay engaged and understand artworks more deeply. Spatial exploration, artwork details, artist context, technique, and visual layers turn passive viewing into an active learning experience.']
+      ]
+    },
     systemLead: 'The same idea moves through hardware, recognition, spatial response, adaptive interpretation, and classroom validation.',
     process: [
       'Hardware concept - the first direction explored an attachable viewing module for museum visitors, plus a companion frame for visitors without glasses.',
@@ -3277,7 +3367,7 @@ const artworks = [
         ['86%', 'learned something new'],
         ['100%', 'want another ArtLens lesson'],
         ['5.0 / 5.0', 'teacher feedback'],
-        ['Adopted', 'for recurring art workshops by the host private school', 'adopted']
+        ['Adopted', 'Recurring art workshops / Host private school', 'adopted']
       ]
     },
     future: true
@@ -3292,6 +3382,25 @@ const artworks = [
     year: '2025',
     role: 'Product design, learning flow, community system, full-stack prototype',
     status: 'Live web prototype',
+    overviewLead: 'A faster way to turn long-form learning into focused, source-grounded study.',
+    productCase: {
+      problem: 'Students often spend too much time moving through long educational videos that contain repetition, setup, or material unrelated to the concept they need. The useful explanation may be only a small part of the total runtime.',
+      insight: 'Learning efficiency improves when the most relevant moments are selected and trimmed into focused units, while the original context remains available when a learner needs to go deeper.',
+      solution: 'ReelAI turns selected source material into short study reels, then layers each reel with a summary, key takeaways, transcript context, and AI chat so learners can review quickly and investigate the topic more deeply.',
+      decisions: [
+        ['Efficiency before volume', 'Prioritize the moments that explain the concept instead of asking learners to consume an entire long video.'],
+        ['Keep the source visible', 'Preserve transcript and source context so condensed learning does not become disconnected from the original material.'],
+        ['Depth on demand', 'Let learners start with a short reel, then open summaries, key takeaways, or AI chat only when they need more explanation.'],
+        ['Discovery with intention', 'Use community sets to help people find material while keeping focused study and personal sources at the center of the experience.']
+      ],
+      architecture: [
+        ['Source Input', 'Long videos, notes, files, and URLs'],
+        ['Signal Selection', 'Identify and trim the most relevant segments'],
+        ['Learning Layer', 'Short reels, summaries, and key takeaways'],
+        ['Deepen', 'Transcript context and in-place AI chat'],
+        ['Continue', 'Personal feeds, saved sets, and community learning']
+      ]
+    },
     description: [
       'ReelAI turns a learner\'s own material into a short-form study feed. Notes, files, and source clips become focused reels that preserve the speed and familiarity of social video while redirecting the interaction toward review.',
       'The platform also supports community learning sets: people can assemble, tag, save, and share reel collections across subjects, then move between discovery and deliberate study without changing interfaces.'
@@ -4757,6 +4866,7 @@ function setArtworkDetailContent(index){
     artworkDetailImage.src = artwork.detailImage || artwork.image;
     artworkDetailImage.alt = artwork.alt || artwork.title;
   }
+  artworkDetailMedia?.classList.toggle('is-reelai-thesis', artwork.slug === 'reelai');
   if (artworkDetailCopy){
     const description = artwork.description.map((paragraph) => `<p>${escapeHTML(paragraph)}</p>`).join('');
     const process = artwork.process.map((step) => `<div class="artwork-detail__process-item">${escapeHTML(step)}</div>`).join('');
@@ -4826,7 +4936,7 @@ function setArtworkDetailContent(index){
         </div>
         <div class="artwork-detail__iteration-grid">
           <div class="artwork-detail__iteration">
-            <figure><img src="images/projects/beyond-canvas-iteration-01.png" alt="First-generation attachable ArtLens viewing module concept" loading="lazy" decoding="async"></figure>
+            <figure><video src="images/projects/artlens-hardware-version-1.mp4" aria-label="First-generation attachable ArtLens hardware concept" autoplay muted loop playsinline controls preload="metadata"></video></figure>
             <span>Iteration 01</span>
             <strong>Attachable module concept: front display and camera, side Raspberry Pi processor, and a frame option for visitors without glasses.</strong>
           </div>
@@ -4844,6 +4954,53 @@ function setArtworkDetailContent(index){
       </section>
     ` : '';
     artworkDetailCopy.classList.toggle('artwork-detail__copy--atlas', artwork.slug === 'artlens');
+    artworkDetailCopy.classList.toggle('artwork-detail__copy--case', !!artwork.productCase);
+    const framingItems = artwork.productCase
+      ? (artwork.productCase.framing || [
+          ['01 / Problem', 'Time is lost inside long-form content', artwork.productCase.problem],
+          ['02 / Insight', 'Relevance changes the learning pace', artwork.productCase.insight],
+          ['03 / Solution', 'Focused reels with depth on demand', artwork.productCase.solution]
+        ])
+      : [];
+    const productCase = artwork.productCase ? `
+      <section class="artwork-detail__wide reelai-case" aria-label="Problem, insight, and solution">
+        <span class="artwork-detail__section-label">Product Framing</span>
+        <div class="reelai-case__triad">
+          ${framingItems.map((item) => `
+            <article class="reelai-case__panel">
+              <span>${escapeHTML(item[0])}</span>
+              <h3>${escapeHTML(item[1])}</h3>
+              <p>${escapeHTML(item[2])}</p>
+            </article>
+          `).join('')}
+        </div>
+      </section>
+      ${artwork.productCase.decisions ? `<section class="artwork-detail__wide reelai-case" aria-label="Key product decisions">
+        <span class="artwork-detail__section-label">Key Decisions</span>
+        <div class="reelai-case__decisions">
+          ${artwork.productCase.decisions.map((decision, decisionIndex) => `
+            <article class="reelai-case__decision">
+              <span>${String(decisionIndex + 1).padStart(2, '0')}</span>
+              <strong>${escapeHTML(decision[0])}</strong>
+              <p>${escapeHTML(decision[1])}</p>
+            </article>
+          `).join('')}
+        </div>
+      </section>` : ''}
+      ${artwork.productCase.architecture ? `<section class="artwork-detail__wide reelai-architecture" aria-label="Product architecture">
+        <span class="artwork-detail__section-label">Product Architecture</span>
+        <p class="reelai-architecture__intro">A product-level view of how long-form material becomes an efficient but still explorable learning experience.</p>
+        <ol class="reelai-architecture__flow">
+          ${artwork.productCase.architecture.map((node, nodeIndex) => `
+            <li class="reelai-architecture__node">
+              <span>${String(nodeIndex + 1).padStart(2, '0')}</span>
+              <strong>${escapeHTML(node[0])}</strong>
+              <p>${escapeHTML(node[1])}</p>
+            </li>
+          `).join('')}
+        </ol>
+      </section>` : ''}
+    ` : '';
     const overview = artwork.overviewLead ? `
       <section class="artwork-detail__overview">
         <header class="artwork-detail__overview-head">
@@ -4877,8 +5034,9 @@ function setArtworkDetailContent(index){
       </section>
     `;
     artworkDetailCopy.innerHTML = `
-      ${overview}
-      ${system}
+      ${artwork.productCase?.problemFirst ? productCase : overview}
+      ${artwork.productCase?.problemFirst ? overview : productCase}
+      ${artwork.productCase && !artwork.productCase.compact ? '' : system}
       <section class="artwork-detail__wide">
         <span class="artwork-detail__section-label">Capabilities</span>
         <div class="artwork-detail__feature-grid">${features}</div>
